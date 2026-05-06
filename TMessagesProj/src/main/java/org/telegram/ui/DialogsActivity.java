@@ -4151,7 +4151,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     if (hasStories && !rightSlidingDialogContainer.hasFragment() && !fixScrollYAfterArchiveOpened) {
                         pTop -= dp(DialogStoriesCell.HEIGHT_IN_DP);
                     }
-                    boolean hasHiddenArchive = !fixScrollYAfterArchiveOpened && viewPage.dialogsType == DIALOGS_TYPE_DEFAULT && !onlySelect && folderId == 0 && getMessagesController().hasHiddenArchive() && viewPage.archivePullViewState == ARCHIVE_ITEM_STATE_HIDDEN;
+                    boolean hasHiddenArchive = !rightSlidingDialogContainer.hasFragment() && !fixScrollYAfterArchiveOpened && viewPage.dialogsType == DIALOGS_TYPE_DEFAULT && !onlySelect && folderId == 0 && getMessagesController().hasHiddenArchive() && viewPage.archivePullViewState == ARCHIVE_ITEM_STATE_HIDDEN;
                     if ((hasHiddenArchive || (hasStories && !rightSlidingDialogContainer.hasFragment())) && dy < 0) {
                         viewPage.listView.setOverScrollMode(View.OVER_SCROLL_ALWAYS);
                         int currentPosition = viewPage.layoutManager.findFirstVisibleItemPosition();
@@ -4210,7 +4210,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         }
                     }
 
-                    if (viewPage.dialogsType == 0 && viewPage.listView.getViewOffset() != 0 && dy > 0 && isDragging) {
+                    if (!rightSlidingDialogContainer.hasFragment() && viewPage.dialogsType == 0 && viewPage.listView.getViewOffset() != 0 && dy > 0 && isDragging) {
                         float ty = (int) viewPage.listView.getViewOffset();
                         ty -= dy;
                         if (ty < 0) {
@@ -4222,7 +4222,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         viewPage.listView.setViewsOffset(ty);
                     }
 
-                    if (viewPage.dialogsType == DIALOGS_TYPE_DEFAULT && viewPage.archivePullViewState != ARCHIVE_ITEM_STATE_PINNED && hasHiddenArchive() && !fixScrollYAfterArchiveOpened) {
+                    if (!rightSlidingDialogContainer.hasFragment() && viewPage.dialogsType == DIALOGS_TYPE_DEFAULT && viewPage.archivePullViewState != ARCHIVE_ITEM_STATE_PINNED && hasHiddenArchive() && !fixScrollYAfterArchiveOpened) {
                         int usedDy = super.scrollVerticallyBy(measuredDy, recycler, state);
                         if (viewPage.pullForegroundDrawable != null) {
                             viewPage.pullForegroundDrawable.scrollDy = usedDy;
@@ -5443,6 +5443,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             public void openAnimationStarted(boolean open) {
                 rightFragmentTransitionInProgress = true;
                 rightFragmentTransitionIsOpen = open;
+                if (open) {
+                    resetDialogsOverscroll();
+                }
                 contentView.requestLayout();
                 fromScrollYProperty = scrollYOffset;
 
@@ -5528,6 +5531,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 rightFragmentTransitionInProgress = false;
                 contentView.requestLayout();
                 if (!hasFragment()) {
+                    resetDialogsOverscroll();
                     invalidateScrollY = true;
                     fixScrollYAfterArchiveOpened = true;
                     if (fragmentView != null) {
@@ -5616,7 +5620,38 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         return fragmentView;
     }
 
+    private void resetDialogsOverscroll() {
+        canShowHiddenArchive = false;
+        startArchivePullingTime = 0;
+        storiesOverscroll = 0;
+        storiesOverscrollCalled = false;
+        if (dialogStoriesCell != null) {
+            dialogStoriesCell.setOverscroll(0);
+        }
+        if (viewPages == null) {
+            DialogsActivity.viewOffset = 0;
+            return;
+        }
+        for (ViewPage viewPage : viewPages) {
+            if (viewPage == null || viewPage.listView == null) {
+                continue;
+            }
+            if (viewPage.listView.getViewOffset() != 0) {
+                viewPage.listView.setViewsOffset(0);
+            }
+            viewPage.listView.setOverScrollMode(RecyclerView.OVER_SCROLL_ALWAYS);
+            if (viewPage.pullForegroundDrawable != null) {
+                viewPage.pullForegroundDrawable.resetText();
+                viewPage.pullForegroundDrawable.setPullProgress(0f);
+                viewPage.pullForegroundDrawable.setListView(viewPage.listView);
+            }
+        }
+    }
+
     private void setStoriesOvercroll(ViewPage viewPage, float storiesOverscroll) {
+        if (storiesOverscroll != 0 && rightSlidingDialogContainer != null && rightSlidingDialogContainer.hasFragment()) {
+            return;
+        }
         if (this.storiesOverscroll == storiesOverscroll) {
             return;
         }
