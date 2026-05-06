@@ -5532,10 +5532,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 contentView.requestLayout();
                 if (!hasFragment()) {
                     resetDialogsOverscroll();
-                    invalidateScrollY = true;
-                    fixScrollYAfterArchiveOpened = true;
-                    if (fragmentView != null) {
-                        fragmentView.invalidate();
+                    if (!resetMainDialogsSearchOffset()) {
+                        invalidateScrollY = true;
+                        fixScrollYAfterArchiveOpened = true;
+                        if (fragmentView != null) {
+                            fragmentView.invalidate();
+                        }
                     }
                 }
                 if (searchViewPager != null) {
@@ -5646,6 +5648,26 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 viewPage.pullForegroundDrawable.setListView(viewPage.listView);
             }
         }
+    }
+
+    private boolean resetMainDialogsSearchOffset() {
+        if (searchIsShowed || searching || hasStories || viewPages == null || viewPages[0] == null || viewPages[0].listView == null) {
+            return false;
+        }
+        invalidateScrollY = false;
+        fixScrollYAfterArchiveOpened = false;
+        setScrollY(0);
+        ViewPage viewPage = viewPages[0];
+        if (viewPage.layoutManager != null && viewPage.dialogsType == DIALOGS_TYPE_DEFAULT && viewPage.archivePullViewState == ARCHIVE_ITEM_STATE_HIDDEN && hasHiddenArchive()) {
+            int firstVisiblePosition = viewPage.layoutManager.findFirstVisibleItemPosition();
+            if (firstVisiblePosition == 0 || firstVisiblePosition == 1) {
+                viewPage.layoutManager.scrollToPositionWithOffset(1, 0);
+            }
+        }
+        if (fragmentView != null) {
+            fragmentView.invalidate();
+        }
+        return true;
     }
 
     private void setStoriesOvercroll(ViewPage viewPage, float storiesOverscroll) {
