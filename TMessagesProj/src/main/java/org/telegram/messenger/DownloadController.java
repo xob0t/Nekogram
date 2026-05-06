@@ -1495,6 +1495,7 @@ public class DownloadController extends BaseController implements NotificationCe
                 });
             }
             getNotificationCenter().postNotificationName(NotificationCenter.onDownloadingFilesChanged);
+            DownloadService.start();
         });
     }
 
@@ -1685,6 +1686,9 @@ public class DownloadController extends BaseController implements NotificationCe
             AndroidUtilities.runOnUIThread(() -> {
                 downloadingFiles.clear();
                 downloadingFiles.addAll(downloadingMessages);
+                if (!downloadingFiles.isEmpty()) {
+                    DownloadService.start();
+                }
 
                 recentDownloadingFiles.clear();
                 recentDownloadingFiles.addAll(recentlyDownloadedMessages);

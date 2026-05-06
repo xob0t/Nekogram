@@ -620,6 +620,12 @@
             android:foregroundServiceType="dataSync"
         />
         <service
+            android:name=".DownloadService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"
+        />
+        <service
             android:name="org.telegram.ui.Stories.recorder.StoryUploadingService"
             android:enabled="true"
             android:exported="true"
