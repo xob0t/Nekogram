@@ -4511,7 +4511,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                             }
                         }
                     }
-                    if (!hasStories && recyclerView == viewPages[0].listView && !searching && actionBar != null && !actionBar.isActionModeShowed() && !disableActionBarScrolling && !rightSlidingDialogContainer.hasFragment()) {
+                    if (!NekoConfig.disablePullToSearch && !hasStories && recyclerView == viewPages[0].listView && !searching && actionBar != null && !actionBar.isActionModeShowed() && !disableActionBarScrolling && !rightSlidingDialogContainer.hasFragment()) {
                         if (dy > 0 && hasHiddenArchive() && viewPages[0].dialogsType == DIALOGS_TYPE_DEFAULT) {
                             View child = recyclerView.getChildAt(0);
                             if (child != null) {
@@ -5649,17 +5649,18 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     private boolean resetMainDialogsSearchOffset() {
-        if (searchIsShowed || searching || hasStories || viewPages == null || viewPages[0] == null || viewPages[0].listView == null) {
+        if (searchIsShowed || searching || viewPages == null || viewPages[0] == null || viewPages[0].listView == null) {
             return false;
         }
         invalidateScrollY = false;
         fixScrollYAfterArchiveOpened = false;
-        setScrollY(0);
+        int collapsedSearchOffset = -getMaxScrollYOffsetWithoutSearch();
+        setScrollY(collapsedSearchOffset);
         ViewPage viewPage = viewPages[0];
         if (viewPage.layoutManager != null && viewPage.dialogsType == DIALOGS_TYPE_DEFAULT && viewPage.archivePullViewState == ARCHIVE_ITEM_STATE_HIDDEN && hasHiddenArchive()) {
             int firstVisiblePosition = viewPage.layoutManager.findFirstVisibleItemPosition();
             if (firstVisiblePosition == 0 || firstVisiblePosition == 1) {
-                viewPage.layoutManager.scrollToPositionWithOffset(1, 0);
+                viewPage.layoutManager.scrollToPositionWithOffset(1, collapsedSearchOffset);
             }
         }
         if (fragmentView != null) {
@@ -13984,7 +13985,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
         final float factor0 = isSupportSearch() ? 1 : 0;
         final float factor1 = (1f - actionModeVisible) * (1f - animatorDoneButtonVisible.getFloatValue());
-        final float factor2 = Math.max(searchFieldVisible, alphaByScrollOffset * (1f - getRightSlidingProgress()));
+        final float factor2 = Math.max(searchFieldVisible, (NekoConfig.disablePullToSearch ? 0f : alphaByScrollOffset) * (1f - getRightSlidingProgress()));
 
         final float alpha = factor0 * factor1 * factor2;
 
