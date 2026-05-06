@@ -5528,10 +5528,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 rightFragmentTransitionInProgress = false;
                 contentView.requestLayout();
                 if (!hasFragment()) {
-                    invalidateScrollY = true;
-                    fixScrollYAfterArchiveOpened = true;
-                    if (fragmentView != null) {
-                        fragmentView.invalidate();
+                    resetDialogsOverscroll();
+                    if (!resetMainDialogsSearchOffset()) {
+                        invalidateScrollY = true;
+                        fixScrollYAfterArchiveOpened = true;
+                        if (fragmentView != null) {
+                            fragmentView.invalidate();
+                        }
                     }
                 }
                 if (searchViewPager != null) {
@@ -5614,6 +5617,55 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
         ViewCompat.setOnApplyWindowInsetsListener(fragmentView, this::onApplyWindowInsets);
         return fragmentView;
+    }
+
+    private void resetDialogsOverscroll() {
+        canShowHiddenArchive = false;
+        startArchivePullingTime = 0;
+        storiesOverscroll = 0;
+        storiesOverscrollCalled = false;
+        if (dialogStoriesCell != null) {
+            dialogStoriesCell.setOverscroll(0);
+        }
+        if (viewPages == null) {
+            DialogsActivity.viewOffset = 0;
+            return;
+        }
+        for (int a = 0; a < viewPages.length; a++) {
+            ViewPage viewPage = viewPages[a];
+            if (viewPage == null || viewPage.listView == null) {
+                continue;
+            }
+            if (viewPage.listView.getViewOffset() != 0) {
+                viewPage.listView.setViewsOffset(0);
+            }
+            viewPage.listView.setOverScrollMode(RecyclerView.OVER_SCROLL_ALWAYS);
+            if (viewPage.pullForegroundDrawable != null) {
+                viewPage.pullForegroundDrawable.resetText();
+                viewPage.pullForegroundDrawable.setPullProgress(0f);
+                viewPage.pullForegroundDrawable.setListView(viewPage.listView);
+            }
+        }
+    }
+
+    private boolean resetMainDialogsSearchOffset() {
+        if (searchIsShowed || searching || hasStories || viewPages == null || viewPages[0] == null || viewPages[0].listView == null) {
+            return false;
+        }
+        invalidateScrollY = false;
+        fixScrollYAfterArchiveOpened = false;
+        setScrollY(0);
+        ViewPage viewPage = viewPages[0];
+        if (viewPage.layoutManager != null && viewPage.dialogsType == DIALOGS_TYPE_DEFAULT && viewPage.archivePullViewState == ARCHIVE_ITEM_STATE_HIDDEN && hasHiddenArchive()) {
+            int firstVisiblePosition = viewPage.layoutManager.findFirstVisibleItemPosition();
+            if (firstVisiblePosition == 0 || firstVisiblePosition == 1) {
+                viewPage.layoutManager.scrollToPositionWithOffset(1, 0);
+            }
+        }
+        if (fragmentView != null) {
+            fragmentView.invalidate();
+        }
+        return true;
     }
 
     private void setStoriesOvercroll(ViewPage viewPage, float storiesOverscroll) {
