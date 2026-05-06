@@ -1614,6 +1614,38 @@ public class DownloadController extends BaseController implements NotificationCe
         });
     }
 
+    public void onDownloadCancel(TLRPC.Document document) {
+        if (document == null) {
+            return;
+        }
+        AndroidUtilities.runOnUIThread(() -> {
+            boolean removed = false;
+            for (int i = 0; i < downloadingFiles.size(); i++) {
+                TLRPC.Document downloadingDocument = downloadingFiles.get(i).getDocument();
+                if (downloadingDocument == null || downloadingDocument.id == document.id) {
+                    downloadingFiles.remove(i);
+                    removed = true;
+                    break;
+                }
+            }
+            if (removed) {
+                getNotificationCenter().postNotificationName(NotificationCenter.onDownloadingFilesChanged);
+            }
+        });
+
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("DELETE FROM downloading_documents WHERE hash = ? AND id = ?");
+                state.bindInteger(1, document.dc_id);
+                state.bindLong(2, document.id);
+                state.step();
+                state.dispose();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
     Runnable clearUnviewedDownloadsRunnale = new Runnable() {
         @Override
         public void run() {

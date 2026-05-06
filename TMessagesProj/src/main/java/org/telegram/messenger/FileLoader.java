@@ -621,6 +621,7 @@ public class FileLoader extends BaseController {
         });
         if (removed && document != null) {
             AndroidUtilities.runOnUIThread(() -> {
+                getDownloadController().onDownloadCancel(document);
                 getNotificationCenter().postNotificationName(NotificationCenter.onDownloadingFilesChanged);
             });
         }
