@@ -46,6 +46,7 @@
     <string name="ProviderLingocloud">Lingocloud</string>
     <string name="UndoTranslate">Отменить перевод</string>
     <string name="OpenArchiveOnPull">Открывать архив по свайпу</string>
+    <string name="DisablePullToSearch">Отключить поиск при свайпе вниз</string>
     <string name="HideKeyboardOnChatScroll">Скрыть клавиатуру при прокрутке</string>
     <string name="CheckAllAdministrated">Добавить управляемые</string>
     <string name="RearVideoMessages">Задняя камера в видеосообщениях</string>

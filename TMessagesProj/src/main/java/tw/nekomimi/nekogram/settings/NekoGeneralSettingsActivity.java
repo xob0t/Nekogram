@@ -42,6 +42,7 @@ public class NekoGeneralSettingsActivity extends BaseNekoSettingsActivity {
     private final int disabledInstantCameraRow = rowId++;
     private final int askBeforeCallRow = rowId++;
     private final int openArchiveOnPullRow = rowId++;
+    private final int disablePullToSearchRow = rowId++;
 
     private CharSequence getTranslationProvider() {
         var providers = Translator.getProviders();
@@ -146,6 +147,7 @@ public class NekoGeneralSettingsActivity extends BaseNekoSettingsActivity {
         items.add(UItem.asCheck(disabledInstantCameraRow, LocaleController.getString(R.string.DisableInstantCamera)).slug("disabledInstantCamera").setChecked(NekoConfig.disableInstantCamera));
         items.add(UItem.asCheck(askBeforeCallRow, LocaleController.getString(R.string.AskBeforeCalling)).slug("askBeforeCall").setChecked(NekoConfig.askBeforeCall));
         items.add(UItem.asCheck(openArchiveOnPullRow, LocaleController.getString(R.string.OpenArchiveOnPull)).slug("openArchiveOnPull").setChecked(NekoConfig.openArchiveOnPull));
+        items.add(UItem.asCheck(disablePullToSearchRow, LocaleController.getString(R.string.DisablePullToSearch)).slug("disablePullToSearch").setChecked(NekoConfig.disablePullToSearch));
         items.add(UItem.asShadow(null));
     }
 
@@ -202,6 +204,11 @@ public class NekoGeneralSettingsActivity extends BaseNekoSettingsActivity {
             NekoConfig.toggleOpenArchiveOnPull();
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(NekoConfig.openArchiveOnPull);
+            }
+        } else if (id == disablePullToSearchRow) {
+            NekoConfig.toggleDisablePullToSearch();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.disablePullToSearch);
             }
         } else if (id == askBeforeCallRow) {
             NekoConfig.toggleAskBeforeCall();
