@@ -6717,7 +6717,7 @@ public class MessagesStorage extends BaseController {
                         state.step();
                         state.dispose();
 
-                        if (isForum(key, FORUM_TYPE_DIRECT | FORUM_TYPE_CHAT_TABS | FORUM_TYPE_BOT)) {
+                        if (isForum(key, FORUM_TYPE_DIRECT | FORUM_TYPE_CHAT | FORUM_TYPE_CHAT_TABS | FORUM_TYPE_BOT)) {
                             updateTopicsWithReadFromAllInternal(key, oldMaxId, messageId);
                         }
                     }
@@ -8081,7 +8081,7 @@ public class MessagesStorage extends BaseController {
 
                 database.commitTransaction();
 
-                if (isForum(dialogId, FORUM_TYPE_DIRECT | FORUM_TYPE_CHAT_TABS | FORUM_TYPE_BOT)) {
+                if (isForum(dialogId, FORUM_TYPE_DIRECT | FORUM_TYPE_CHAT | FORUM_TYPE_CHAT_TABS | FORUM_TYPE_BOT)) {
                     updateTopicsWithReadFromAllInternal(dialogId, oldMaxId, currentMaxId);
                 }
 
