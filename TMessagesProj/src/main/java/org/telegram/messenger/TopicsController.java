@@ -592,6 +592,7 @@ public class TopicsController extends BaseController {
                 topic.unread_mentions_count = mentionsUnread;
             }
             sortTopics(chatId);
+            getNotificationCenter().postNotificationName(NotificationCenter.topicsDidLoaded, chatId, true);
         }
     }
 
