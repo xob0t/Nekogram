@@ -111,16 +111,23 @@ jobs:
           echo "build_timestamp=$BUILD_TIMESTAMP" >> "$GITHUB_OUTPUT"
           ./gradlew :TMessagesProj_App:assembleRelease
 
-          APK=TMessagesProj_App/build/outputs/apk/ci-release
-          mkdir -p "$APK"
-          cp TMessagesProj_App/build/outputs/apk/release/*arm64-v8a.apk "$APK"/
-          cp TMessagesProj_App/build/outputs/apk/release/*universal.apk "$APK"/
-          echo "APK=$APK" >> "$GITHUB_ENV"
+          ARM64_APK=TMessagesProj_App/build/outputs/apk/ci-release-arm64-v8a
+          UNIVERSAL_APK=TMessagesProj_App/build/outputs/apk/ci-release-universal
+          mkdir -p "$ARM64_APK" "$UNIVERSAL_APK"
+          cp TMessagesProj_App/build/outputs/apk/release/*arm64-v8a.apk "$ARM64_APK"/
+          cp TMessagesProj_App/build/outputs/apk/release/*universal.apk "$UNIVERSAL_APK"/
+          echo "ARM64_APK=$ARM64_APK" >> "$GITHUB_ENV"
+          echo "UNIVERSAL_APK=$UNIVERSAL_APK" >> "$GITHUB_ENV"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Release
-          path: ${{ env.APK }}
+          name: Release-arm64-v8a
+          path: ${{ env.ARM64_APK }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Release-universal
+          path: ${{ env.UNIVERSAL_APK }}
 
   upload:
     name: Upload release
