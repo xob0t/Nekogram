@@ -947,6 +947,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
             if (invalidateScrollY && (rightSlidingDialogContainer == null || !rightSlidingDialogContainer.hasFragment()) && progressToActionMode == 0) {
                 invalidateScrollY = false;
+                if (NekoConfig.disablePullToSearch && !searchIsShowed && !searching) {
+                    collapsePullSearchOffset();
+                    return;
+                }
                 int firstItemPosition = hasHiddenArchive() && viewPages[0].dialogsType == DIALOGS_TYPE_DEFAULT ? 1 : 0;
                 DialogsRecyclerView recyclerView = viewPages[0].listView;
                 if (fixScrollYAfterArchiveOpened) {
@@ -2206,7 +2210,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
             }
             boolean result = super.onTouchEvent(e);
-            if (parentPage.dialogsType == DIALOGS_TYPE_DEFAULT && (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) && parentPage.archivePullViewState == ARCHIVE_ITEM_STATE_HIDDEN && hasHiddenArchive()) {
+            if (canPullHiddenArchive(parentPage) && (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL)) {
                 LinearLayoutManager layoutManager = (LinearLayoutManager) getLayoutManager();
                 int currentPosition = layoutManager.findFirstVisibleItemPosition();
                 if (currentPosition == 0) {
@@ -4151,7 +4155,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     if (hasStories && !rightSlidingDialogContainer.hasFragment() && !fixScrollYAfterArchiveOpened) {
                         pTop -= dp(DialogStoriesCell.HEIGHT_IN_DP);
                     }
-                    boolean hasHiddenArchive = !fixScrollYAfterArchiveOpened && viewPage.dialogsType == DIALOGS_TYPE_DEFAULT && !onlySelect && folderId == 0 && getMessagesController().hasHiddenArchive() && viewPage.archivePullViewState == ARCHIVE_ITEM_STATE_HIDDEN;
+                    boolean hasHiddenArchive = canPullHiddenArchive(viewPage);
                     if ((hasHiddenArchive || (hasStories && !rightSlidingDialogContainer.hasFragment())) && dy < 0) {
                         viewPage.listView.setOverScrollMode(View.OVER_SCROLL_ALWAYS);
                         int currentPosition = viewPage.layoutManager.findFirstVisibleItemPosition();
@@ -4222,7 +4226,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         viewPage.listView.setViewsOffset(ty);
                     }
 
-                    if (viewPage.dialogsType == DIALOGS_TYPE_DEFAULT && viewPage.archivePullViewState != ARCHIVE_ITEM_STATE_PINNED && hasHiddenArchive() && !fixScrollYAfterArchiveOpened) {
+                    if (canHandleArchivePull(viewPage)) {
                         int usedDy = super.scrollVerticallyBy(measuredDy, recycler, state);
                         if (viewPage.pullForegroundDrawable != null) {
                             viewPage.pullForegroundDrawable.scrollDy = usedDy;
@@ -4512,6 +4516,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                 scrollUpdated = true;
                             }
                         }
+                    }
+                    if (NekoConfig.disablePullToSearch && recyclerView == viewPages[0].listView && !searchIsShowed && !searching && actionBar != null && !actionBar.isActionModeShowed()) {
+                        collapsePullSearchOffset();
                     }
                     if (!NekoConfig.disablePullToSearch && !hasStories && recyclerView == viewPages[0].listView && !searching && actionBar != null && !actionBar.isActionModeShowed() && !disableActionBarScrolling && !rightSlidingDialogContainer.hasFragment()) {
                         if (dy > 0 && hasHiddenArchive() && viewPages[0].dialogsType == DIALOGS_TYPE_DEFAULT) {
@@ -5649,6 +5656,28 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 viewPage.pullForegroundDrawable.setPullProgress(0f);
                 viewPage.pullForegroundDrawable.setListView(viewPage.listView);
             }
+        }
+    }
+
+    private boolean canPullHiddenArchive(ViewPage viewPage) {
+        return canHandleArchivePull(viewPage) && viewPage.archivePullViewState == ARCHIVE_ITEM_STATE_HIDDEN;
+    }
+
+    private boolean canHandleArchivePull(ViewPage viewPage) {
+        return viewPage != null
+                && viewPage.dialogsType == DIALOGS_TYPE_DEFAULT
+                && viewPage.archivePullViewState != ARCHIVE_ITEM_STATE_PINNED
+                && !fixScrollYAfterArchiveOpened
+                && !onlySelect
+                && folderId == 0
+                && hasHiddenArchive()
+                && (rightSlidingDialogContainer == null || !rightSlidingDialogContainer.hasFragment());
+    }
+
+    private void collapsePullSearchOffset() {
+        float collapsedOffset = getCollapsedSearchScrollOffset();
+        if (scrollYOffset > collapsedOffset) {
+            setScrollY(collapsedOffset);
         }
     }
 
