@@ -949,50 +949,50 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 invalidateScrollY = false;
                 if (NekoConfig.disablePullToSearch && !searchIsShowed && !searching) {
                     collapsePullSearchOffset();
-                    return;
-                }
-                int firstItemPosition = hasHiddenArchive() && viewPages[0].dialogsType == DIALOGS_TYPE_DEFAULT ? 1 : 0;
-                DialogsRecyclerView recyclerView = viewPages[0].listView;
-                if (fixScrollYAfterArchiveOpened) {
-                    if (waitingForScrollFinished) {
-                        firstItemPosition = 0;
-                    } else {
-                        if (firstItemPosition == 0) {
-                            fixScrollYAfterArchiveOpened = false;
-                        }
-                        if (fixScrollYAfterArchiveOpened) {
-                            RecyclerView.ViewHolder archiveHolder = recyclerView.findViewHolderForLayoutPosition(0);
-                            if (archiveHolder == null) {
-                                fixScrollYAfterArchiveOpened = false;
-                            } else if (archiveHolder.itemView.getBottom() <= recyclerView.getPaddingTop() - dp(DialogStoriesCell.HEIGHT_IN_DP)) {
-                                fixScrollYAfterArchiveOpened = false;
-                            } else if (archiveHolder.itemView.getTop() >= recyclerView.getPaddingTop()) {
-                                fixScrollYAfterArchiveOpened = false;
-                            }
-                            if (fixScrollYAfterArchiveOpened && firstItemPosition == 1) {
-                                firstItemPosition = 0;
-                            }
-                        }
-                    }
-                }
-
-                RecyclerView.ViewHolder holder = recyclerView.findViewHolderForLayoutPosition(firstItemPosition);
-                if (holder != null) {
-                    float visiblePartAfterScroll = recyclerView.getPaddingTop() - holder.itemView.getY();
-                    if (visiblePartAfterScroll >= 0) {
-                        int maxScrollYOffset = getMaxScrollYOffset();
-                        float newTranslation = -visiblePartAfterScroll;
-                        if (newTranslation < -maxScrollYOffset) {
-                            newTranslation = -maxScrollYOffset;
-                        } else if (newTranslation > 0) {
-                            newTranslation = 0;
-                        }
-                        DialogsActivity.this.setScrollY(newTranslation);
-                    } else {
-                        DialogsActivity.this.setScrollY(0);
-                    }
                 } else {
-                    DialogsActivity.this.setScrollY(-getMaxScrollYOffset());
+                    int firstItemPosition = hasHiddenArchive() && viewPages[0].dialogsType == DIALOGS_TYPE_DEFAULT ? 1 : 0;
+                    DialogsRecyclerView recyclerView = viewPages[0].listView;
+                    if (fixScrollYAfterArchiveOpened) {
+                        if (waitingForScrollFinished) {
+                            firstItemPosition = 0;
+                        } else {
+                            if (firstItemPosition == 0) {
+                                fixScrollYAfterArchiveOpened = false;
+                            }
+                            if (fixScrollYAfterArchiveOpened) {
+                                RecyclerView.ViewHolder archiveHolder = recyclerView.findViewHolderForLayoutPosition(0);
+                                if (archiveHolder == null) {
+                                    fixScrollYAfterArchiveOpened = false;
+                                } else if (archiveHolder.itemView.getBottom() <= recyclerView.getPaddingTop() - dp(DialogStoriesCell.HEIGHT_IN_DP)) {
+                                    fixScrollYAfterArchiveOpened = false;
+                                } else if (archiveHolder.itemView.getTop() >= recyclerView.getPaddingTop()) {
+                                    fixScrollYAfterArchiveOpened = false;
+                                }
+                                if (fixScrollYAfterArchiveOpened && firstItemPosition == 1) {
+                                    firstItemPosition = 0;
+                                }
+                            }
+                        }
+                    }
+
+                    RecyclerView.ViewHolder holder = recyclerView.findViewHolderForLayoutPosition(firstItemPosition);
+                    if (holder != null) {
+                        float visiblePartAfterScroll = recyclerView.getPaddingTop() - holder.itemView.getY();
+                        if (visiblePartAfterScroll >= 0) {
+                            int maxScrollYOffset = getMaxScrollYOffset();
+                            float newTranslation = -visiblePartAfterScroll;
+                            if (newTranslation < -maxScrollYOffset) {
+                                newTranslation = -maxScrollYOffset;
+                            } else if (newTranslation > 0) {
+                                newTranslation = 0;
+                            }
+                            DialogsActivity.this.setScrollY(newTranslation);
+                        } else {
+                            DialogsActivity.this.setScrollY(0);
+                        }
+                    } else {
+                        DialogsActivity.this.setScrollY(-getMaxScrollYOffset());
+                    }
                 }
             }
             final int actionBarHeight = getActionBarFullHeight();
