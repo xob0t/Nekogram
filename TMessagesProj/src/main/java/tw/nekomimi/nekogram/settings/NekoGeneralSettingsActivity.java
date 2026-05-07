@@ -40,6 +40,7 @@ public class NekoGeneralSettingsActivity extends BaseNekoSettingsActivity {
     private final int idTypeRow = rowId++;
 
     private final int disabledInstantCameraRow = rowId++;
+    private final int hideStoryCameraButtonRow = rowId++;
     private final int askBeforeCallRow = rowId++;
     private final int openArchiveOnPullRow = rowId++;
     private final int disablePullToSearchRow = rowId++;
@@ -145,6 +146,7 @@ public class NekoGeneralSettingsActivity extends BaseNekoSettingsActivity {
 
         items.add(UItem.asHeader(LocaleController.getString(R.string.General)));
         items.add(UItem.asCheck(disabledInstantCameraRow, LocaleController.getString(R.string.DisableInstantCamera)).slug("disabledInstantCamera").setChecked(NekoConfig.disableInstantCamera));
+        items.add(UItem.asCheck(hideStoryCameraButtonRow, LocaleController.getString(R.string.HideStoryCameraButton)).slug("hideStoryCameraButton").setChecked(NekoConfig.hideStoryCameraButton));
         items.add(UItem.asCheck(askBeforeCallRow, LocaleController.getString(R.string.AskBeforeCalling)).slug("askBeforeCall").setChecked(NekoConfig.askBeforeCall));
         items.add(UItem.asCheck(openArchiveOnPullRow, LocaleController.getString(R.string.OpenArchiveOnPull)).slug("openArchiveOnPull").setChecked(NekoConfig.openArchiveOnPull));
         items.add(UItem.asCheck(disablePullToSearchRow, LocaleController.getString(R.string.DisablePullToSearch)).slug("disablePullToSearch").setChecked(NekoConfig.disablePullToSearch));
@@ -168,6 +170,11 @@ public class NekoGeneralSettingsActivity extends BaseNekoSettingsActivity {
             NekoConfig.toggleDisabledInstantCamera();
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(NekoConfig.disableInstantCamera);
+            }
+        } else if (id == hideStoryCameraButtonRow) {
+            NekoConfig.toggleHideStoryCameraButton();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.hideStoryCameraButton);
             }
         } else if (id == nameOrderRow) {
             ArrayList<String> arrayList = new ArrayList<>();

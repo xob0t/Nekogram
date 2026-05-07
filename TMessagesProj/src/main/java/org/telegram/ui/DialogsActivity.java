@@ -4760,7 +4760,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
         });
 
-        if (!isArchive() && initialDialogsType == DIALOGS_TYPE_DEFAULT) {
+        if (!NekoConfig.hideStoryCameraButton && !isArchive() && initialDialogsType == DIALOGS_TYPE_DEFAULT) {
             if (MessagesController.getInstance(currentAccount).getMainSettings().getBoolean("storyhint", true)) {
                 storyHint = new HintView2(context, HintView2.DIRECTION_RIGHT)
                         .setRounding(8)
@@ -7091,6 +7091,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (searchViewPager != null) {
             searchViewPager.onResume();
         }
+        updateFloatingButtonVisibility(false);
+        updateFloatingButtonOffset();
         final boolean tosAccepted;
         if (!afterSignup) {
             tosAccepted = getUserConfig().unacceptedTermsOfService == null;
@@ -7412,7 +7414,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 showArchiveHelp();
             }
         }
-        if (canShowStoryHint && !storyHintShown && storyHint != null && storiesEnabled) {
+        if (canShowStoryHint && !storyHintShown && storyHint != null && storiesEnabled && !NekoConfig.hideStoryCameraButton) {
             storyHintShown = true;
             canShowStoryHint = false;
             storyHint.show();
@@ -8826,7 +8828,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             floatingButton3.setButtonVisible(isVisible, animated);
         }
         if (floatingButtonStories != null) {
-            floatingButtonStories.setButtonVisible(isVisible, animated);
+            floatingButtonStories.setButtonVisible(isVisible && !NekoConfig.hideStoryCameraButton, animated);
         }
     }
 
@@ -8838,7 +8840,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (floatingButton3 != null) {
             floatingButton3.setTranslationY(baseTranslationY);
         }
-        if (floatingButtonStories != null) {
+        if (floatingButtonStories != null && !NekoConfig.hideStoryCameraButton) {
             floatingButtonStories.setTranslationY(baseTranslationY - dp(52));
             if (storyHint != null) {
                 storyHint.setTranslationY(baseTranslationY - dp(52));
@@ -8851,7 +8853,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         final boolean storiesEnabled = getMessagesController().storiesEnabled();
         if (this.storiesEnabled != storiesEnabled) {
             updateFloatingButtonOffset();
-            if (!this.storiesEnabled && storiesEnabled && storyHint != null) {
+            if (!this.storiesEnabled && storiesEnabled && storyHint != null && !NekoConfig.hideStoryCameraButton) {
                 storyHint.show();
             }
             this.storiesEnabled = storiesEnabled;
