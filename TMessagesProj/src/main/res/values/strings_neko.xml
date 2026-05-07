@@ -49,6 +49,7 @@
     <string name="ProviderLingocloud">Lingocloud</string>
     <string name="UndoTranslate">Undo translate</string>
     <string name="OpenArchiveOnPull">Open Archive on pulldown</string>
+    <string name="DisablePullToSearch">Disable pull down to show search</string>
     <string name="HideKeyboardOnChatScroll">Hide keyboard on chat scroll</string>
     <string name="CheckAllAdministrated">Add administrated</string>
     <string name="RearVideoMessages">Rear camera in Video Messages</string>

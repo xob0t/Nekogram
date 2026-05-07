@@ -110,6 +110,7 @@ public class NekoConfig {
 
     public static int tabletMode = TABLET_AUTO;
     public static boolean openArchiveOnPull = false;
+    public static boolean disablePullToSearch = false;
     public static int nameOrder = 1;
     public static boolean disableAppBarShadow = false;
     public static boolean mediaPreview = true;
@@ -186,6 +187,7 @@ public class NekoConfig {
             stickerSize = preferences.getFloat("stickerSize", 14.0f);
             translationProvider = preferences.getString("translationProvider2", Translator.PROVIDER_GOOGLE);
             openArchiveOnPull = preferences.getBoolean("openArchiveOnPull", false);
+            disablePullToSearch = preferences.getBoolean("disablePullToSearch", false);
             hideKeyboardOnChatScroll = preferences.getBoolean("hideKeyboardOnChatScroll", false);
             useSystemEmoji = preferences.getBoolean("useSystemEmoji", false);
             hideAllTab = preferences.getBoolean("hideAllTab", false);
@@ -708,6 +710,14 @@ public class NekoConfig {
         SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("nekoconfig", Activity.MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("openArchiveOnPull", openArchiveOnPull);
+        editor.apply();
+    }
+
+    public static void toggleDisablePullToSearch() {
+        disablePullToSearch = !disablePullToSearch;
+        SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("nekoconfig", Activity.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("disablePullToSearch", disablePullToSearch);
         editor.apply();
     }
 
