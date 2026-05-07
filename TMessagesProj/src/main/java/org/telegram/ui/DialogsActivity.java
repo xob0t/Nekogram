@@ -5494,7 +5494,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
                 if (!open) {
                     invalidateScrollY = false;
-                    DialogsActivity.this.setScrollY(-getMaxScrollYOffsetWithoutSearch());
+                    DialogsActivity.this.setScrollY(getCollapsedSearchScrollOffset());
                 }
 
                 transitionPage.listView.stopScroll();
@@ -5658,7 +5658,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
         invalidateScrollY = false;
         fixScrollYAfterArchiveOpened = false;
-        int collapsedSearchOffset = -getMaxScrollYOffsetWithoutSearch();
+        int collapsedSearchOffset = getCollapsedSearchScrollOffset();
         setScrollY(collapsedSearchOffset);
         ViewPage viewPage = viewPages[0];
         if (viewPage.layoutManager != null && viewPage.dialogsType == DIALOGS_TYPE_DEFAULT && viewPage.archivePullViewState == ARCHIVE_ITEM_STATE_HIDDEN && hasHiddenArchive()) {
@@ -5792,10 +5792,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
+    private int getCollapsedSearchScrollOffset() {
+        return -getMaxScrollYOffset();
+    }
+
     private int getSearchFieldLayoutHeight() {
-        if (NekoConfig.disablePullToSearch && !searchIsShowed && !searching && (animatorSearchVisible == null || !animatorSearchVisible.getValue())) {
-            return 0;
-        }
         return dp(SEARCH_FIELD_HEIGHT);
     }
 
@@ -8977,7 +8978,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             return;
         }
 
-        final float target = hasStories ? -getMaxScrollYOffsetWithoutSearch() : 0;
+        final float target = getCollapsedSearchScrollOffset();
 
 
         AnimatorSet animatorSet = new AnimatorSet();
