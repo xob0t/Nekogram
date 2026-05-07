@@ -1548,6 +1548,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
 
         if (collapsedView || isTransitionSupport) {
             for (int k = 0; k < array.size(); k++) {
+                if (collapsedView && SharedConfig.archiveHidden && folderId == 0 && dialogsType == DialogsActivity.DIALOGS_TYPE_DEFAULT && array.get(k).id == DialogObject.makeFolderDialogId(1)) {
+                    continue;
+                }
                 if (dialogsType == 2 && array.get(k) instanceof DialogsActivity.DialogsHeader) {
                     itemInternals.add(new ItemInternal(VIEW_TYPE_HEADER_2, array.get(k)));
                 } else {
