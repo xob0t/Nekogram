@@ -11,6 +11,7 @@ package org.telegram.messenger;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.IBinder;
 
@@ -21,6 +22,7 @@ import org.telegram.ui.LaunchActivity;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import tw.nekomimi.nekogram.NekoConfig;
 
@@ -80,7 +82,11 @@ public class DownloadService extends Service implements NotificationCenter.Notif
         } catch (Throwable ignore) {
 
         }
-        NotificationManagerCompat.from(ApplicationLoader.applicationContext).cancel(NOTIFICATION_ID);
+        try {
+            NotificationManagerCompat.from(ApplicationLoader.applicationContext).cancel(NOTIFICATION_ID);
+        } catch (Throwable ignore) {
+
+        }
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
             NotificationCenter.getInstance(a).removeObserver(this, NotificationCenter.onDownloadingFilesChanged);
             NotificationCenter.getInstance(a).removeObserver(this, NotificationCenter.fileLoadProgressChanged);
@@ -92,16 +98,16 @@ public class DownloadService extends Service implements NotificationCenter.Notif
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        ensureBuilder();
+        updateBuilderContent();
+        try {
+            startForegroundCompat();
+        } catch (Throwable e) {
+            FileLog.e(e);
+        }
         if (!hasDownloads()) {
             stopSelf();
             return Service.START_NOT_STICKY;
-        }
-        ensureBuilder();
-        updateNotification();
-        try {
-            startForeground(NOTIFICATION_ID, builder.build());
-        } catch (Throwable e) {
-            FileLog.e(e);
         }
         return Service.START_NOT_STICKY;
     }
@@ -214,18 +220,45 @@ public class DownloadService extends Service implements NotificationCenter.Notif
         builder.setContentIntent(pendingIntent);
     }
 
+    private void startForegroundCompat() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIFICATION_ID, builder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+        } else {
+            startForeground(NOTIFICATION_ID, builder.build());
+        }
+    }
+
+    private void updateBuilderContent() {
+        int count = getDownloadsCount();
+        HashSet<String> fileNames = getDownloadingFileNames();
+        Iterator<String> iterator = progressByFile.keySet().iterator();
+        while (iterator.hasNext()) {
+            if (!fileNames.contains(iterator.next())) {
+                iterator.remove();
+            }
+        }
+        int progress = getProgress(fileNames);
+        builder.setContentText(count == 1 ? LocaleController.formatString(R.string.AppUpdateDownloading, progress) : LocaleController.getString(R.string.SaveToDownloads));
+        builder.setProgress(100, progress, progress == 0);
+    }
+
     private void updateNotification() {
         if (!hasDownloads()) {
+            try {
+                stopForeground(true);
+            } catch (Throwable ignore) {
+
+            }
+            try {
+                NotificationManagerCompat.from(ApplicationLoader.applicationContext).cancel(NOTIFICATION_ID);
+            } catch (Throwable ignore) {
+
+            }
             stopSelf();
             return;
         }
         ensureBuilder();
-        int count = getDownloadsCount();
-        HashSet<String> fileNames = getDownloadingFileNames();
-        progressByFile.keySet().removeIf(fileName -> !fileNames.contains(fileName));
-        int progress = getProgress(fileNames);
-        builder.setContentText(count == 1 ? LocaleController.formatString(R.string.AppUpdateDownloading, progress) : LocaleController.getString(R.string.SaveToDownloads));
-        builder.setProgress(100, progress, progress == 0);
+        updateBuilderContent();
         try {
             NotificationManagerCompat.from(ApplicationLoader.applicationContext).notify(NOTIFICATION_ID, builder.build());
         } catch (Throwable e) {
