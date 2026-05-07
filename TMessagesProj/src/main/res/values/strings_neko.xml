@@ -89,6 +89,7 @@
     <string name="VoiceEnhancements">Voice enhancements</string>
     <string name="VoiceEnhancementsAbout">Noise Suppression and Voice Normalization</string>
     <string name="DisableInstantCamera">Disable instant camera</string>
+    <string name="HideStoryCameraButton">Hide story camera button</string>
     <string name="OpenAllLinksInInstantView">Try to open all links in InstantView</string>
     <string name="DonateThankYou">Thank you!</string>
     <string name="DonateEvilGoogle">Google will take 30 percent of your donation.</string>

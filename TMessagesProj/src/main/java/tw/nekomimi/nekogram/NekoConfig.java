@@ -118,6 +118,7 @@ public class NekoConfig {
     public static boolean mapDriftingFix = false;
     public static boolean voiceEnhancements = false;
     public static boolean disableInstantCamera = false;
+    public static boolean hideStoryCameraButton = false;
     public static boolean tryToOpenAllLinksInIV = false;
     public static boolean formatTimeWithSeconds = false;
     public static boolean accentAsNotificationColor = false;
@@ -202,6 +203,7 @@ public class NekoConfig {
             mapDriftingFix = preferences.getBoolean("mapDriftingFix", userMcc == 460);
             voiceEnhancements = preferences.getBoolean("voiceEnhancements", false);
             disableInstantCamera = preferences.getBoolean("disableInstantCamera", false);
+            hideStoryCameraButton = preferences.getBoolean("hideStoryCameraButton", false);
             tryToOpenAllLinksInIV = preferences.getBoolean("tryToOpenAllLinksInIV", false);
             formatTimeWithSeconds = preferences.getBoolean("formatTimeWithSeconds", false);
             accentAsNotificationColor = preferences.getBoolean("accentAsNotificationColor", false);
@@ -836,6 +838,14 @@ public class NekoConfig {
         SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("nekoconfig", Activity.MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("disableInstantCamera", disableInstantCamera);
+        editor.apply();
+    }
+
+    public static void toggleHideStoryCameraButton() {
+        hideStoryCameraButton = !hideStoryCameraButton;
+        SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("nekoconfig", Activity.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("hideStoryCameraButton", hideStoryCameraButton);
         editor.apply();
     }
 
