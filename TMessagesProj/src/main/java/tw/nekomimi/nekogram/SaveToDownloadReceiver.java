@@ -5,6 +5,7 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.text.TextUtils;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -52,6 +53,10 @@ public class SaveToDownloadReceiver extends BroadcastReceiver {
     }
 
     public static void showNotification(Context context, int notificationId, int count, Runnable callback) {
+        showNotification(context, notificationId, count, null, callback);
+    }
+
+    public static void showNotification(Context context, int notificationId, int count, String source, Runnable callback) {
         NotificationsController.checkOtherNotificationsChannel();
         var intent = new Intent(context, SaveToDownloadReceiver.class)
                 .setAction(ACTION_CANCEL_DOWNLOAD)
@@ -59,9 +64,10 @@ public class SaveToDownloadReceiver extends BroadcastReceiver {
         var pendingIntent = PendingIntent.getBroadcast(context, notificationId, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         var builder = new NotificationCompat.Builder(context, NotificationsController.OTHER_NOTIFICATIONS_CHANNEL)
-                .setContentTitle(LocaleController.getString(R.string.AppName))
+                .setContentTitle(LocaleController.getString(R.string.SaveToDownloads))
                 .setTicker(LocaleController.formatPluralString("SaveToDownloadCount", count))
-                .setContentText(LocaleController.formatPluralString("SaveToDownloadCount", count))
+                .setContentText(TextUtils.isEmpty(source) ? LocaleController.formatPluralString("SaveToDownloadCount", count) : source)
+                .setSubText(LocaleController.getString(R.string.AppName))
                 .setCategory(NotificationCompat.CATEGORY_STATUS)
                 .setProgress(100, 0, true)
                 .setSmallIcon(android.R.drawable.stat_sys_download)

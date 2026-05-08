@@ -46501,11 +46501,9 @@ public class ChatActivity extends BaseFragment implements
                                 options.add(OPTION_SAVE_TO_DOWNLOADS_OR_MUSIC);
                                 icons.add(R.drawable.msg_download);
                             }
-                            if (NekoConfig.showOpenIn) {
-                                items.add(LocaleController.getString(R.string.OpenInExternalApp));
-                                options.add(OPTION_OPEN_IN);
-                                icons.add(R.drawable.msg_openin);
-                            }
+                            items.add(LocaleController.getString(R.string.OpenInExternalApp));
+                            options.add(OPTION_OPEN_IN);
+                            icons.add(R.drawable.msg_openin);
                         } else if (selectedObject.isMusic() && !noforwardsOrPaidMedia && !selectedObject.isVoiceOnce() && !selectedObject.isRoundOnce()) {
                             items.add(LocaleController.getString(R.string.SaveToMusic));
                             options.add(OPTION_SAVE_TO_DOWNLOADS_OR_MUSIC);
@@ -46542,11 +46540,9 @@ public class ChatActivity extends BaseFragment implements
                                 items.add(LocaleController.getString(R.string.ShareFile));
                                 options.add(OPTION_SHARE);
                                 icons.add(R.drawable.msg_shareout);
-                                if (NekoConfig.showOpenIn) {
-                                    items.add(LocaleController.getString(R.string.OpenInExternalApp));
-                                    options.add(OPTION_OPEN_IN);
-                                    icons.add(R.drawable.msg_openin);
-                                }
+                                items.add(LocaleController.getString(R.string.OpenInExternalApp));
+                                options.add(OPTION_OPEN_IN);
+                                icons.add(R.drawable.msg_openin);
                             }
                         } else if (selectedObject.isMusic() && !selectedObject.isVoiceOnce() && !selectedObject.isRoundOnce()) {
                             items.add(LocaleController.getString(R.string.SaveToMusic));
@@ -46632,7 +46628,7 @@ public class ChatActivity extends BaseFragment implements
                         items.add(LocaleController.getString(R.string.ShareFile));
                         options.add(OPTION_SHARE);
                         icons.add(R.drawable.msg_shareout);
-                        if (NekoConfig.showOpenIn && selectedObject.isVideo()) {
+                        if (selectedObject.isVideo()) {
                             items.add(LocaleController.getString(R.string.OpenInExternalApp));
                             options.add(OPTION_OPEN_IN);
                             icons.add(R.drawable.msg_openin);
@@ -46852,6 +46848,9 @@ public class ChatActivity extends BaseFragment implements
                         items.add(LocaleController.getString(R.string.ShareFile));
                         options.add(OPTION_SHARE);
                         icons.add(R.drawable.msg_shareout);
+                        items.add(LocaleController.getString(R.string.OpenInExternalApp));
+                        options.add(OPTION_OPEN_IN);
+                        icons.add(R.drawable.msg_openin);
                     } else if (selectedObject.isMusic() && !selectedObject.isVoiceOnce() && !selectedObject.isRoundOnce()) {
                         items.add(LocaleController.getString(R.string.SaveToMusic));
                         options.add(OPTION_SAVE_TO_DOWNLOADS_OR_MUSIC);
