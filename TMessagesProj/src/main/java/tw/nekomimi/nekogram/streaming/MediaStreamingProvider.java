@@ -24,6 +24,7 @@ import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.FileStreamLoadOperation;
 import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.Utilities;
 import org.telegram.messenger.secretmedia.ExtendedDefaultDataSourceFactory;
 import org.telegram.tgnet.TLRPC;
 
@@ -138,17 +139,46 @@ public class MediaStreamingProvider extends ContentProvider {
         private long size;
         private final DataSource dataSource;
         private final DataSpec.Builder dataSpecBuilder;
+        private final int currentAccount;
+        private final TLRPC.Document document;
 
         public ProxyFileDescriptorCallback(Uri uri) {
             var tgUri = uri.buildUpon().scheme("tg").build();
             var mediaDataSourceFactory = new ExtendedDefaultDataSourceFactory(ApplicationLoader.applicationContext, "Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20150101 Firefox/47.0 (Chrome)");
             dataSource = mediaDataSourceFactory.createDataSource();
             dataSpecBuilder = new DataSpec.Builder().setUri(tgUri);
+            currentAccount = Utilities.parseInt(tgUri.getQueryParameter("account"));
+            document = createDocument(tgUri);
+            size = document != null ? document.size : 0;
+        }
+
+        private static TLRPC.Document createDocument(Uri uri) {
+            TLRPC.TL_document document = new TLRPC.TL_document();
+            document.access_hash = Utilities.parseLong(uri.getQueryParameter("hash"));
+            document.id = Utilities.parseLong(uri.getQueryParameter("id"));
+            document.size = Utilities.parseLong(uri.getQueryParameter("size"));
+            document.dc_id = Utilities.parseInt(uri.getQueryParameter("dc"));
+            document.mime_type = uri.getQueryParameter("mime");
+            document.file_reference = Utilities.hexToBytes(uri.getQueryParameter("reference"));
+            TLRPC.TL_documentAttributeFilename filename = new TLRPC.TL_documentAttributeFilename();
+            filename.file_name = uri.getQueryParameter("name");
+            document.attributes.add(filename);
+            if (document.mime_type != null && document.mime_type.startsWith("video")) {
+                document.attributes.add(new TLRPC.TL_documentAttributeVideo());
+            } else if (document.mime_type != null && document.mime_type.startsWith("audio")) {
+                document.attributes.add(new TLRPC.TL_documentAttributeAudio());
+            }
+            return document;
+        }
+
+        private void closeAndCancelStreamLoad() {
             try {
-                size = dataSource.open(dataSpecBuilder.build());
                 dataSource.close();
             } catch (IOException e) {
                 FileLog.e(e);
+            }
+            if (document != null) {
+                FileLoader.getInstance(currentAccount).cancelLoadFile(document, false);
             }
         }
 
@@ -160,12 +190,13 @@ public class MediaStreamingProvider extends ContentProvider {
 
                 dataSource.open(dataSpecBuilder.build());
                 var bytesRead = dataSource.read(data, 0, size);
-                dataSource.close();
 
                 return bytesRead == C.RESULT_END_OF_INPUT ? 0 : bytesRead;
             } catch (IOException e) {
                 FileLog.e(e);
                 throw new ErrnoException("onRead", OsConstants.EBADF);
+            } finally {
+                closeAndCancelStreamLoad();
             }
         }
 
@@ -186,7 +217,7 @@ public class MediaStreamingProvider extends ContentProvider {
 
         @Override
         public void onRelease() {
-
+            closeAndCancelStreamLoad();
         }
     }
 }
