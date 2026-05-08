@@ -5555,7 +5555,8 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 try {
                     AndroidUtilities.runOnUIThread(() -> {
                         if (!finished[0]) {
-                            SaveToDownloadReceiver.showNotification(context, notificationId, 1, () -> cancelled[0] = true);
+                            String source = !TextUtils.isEmpty(name) ? name : sourceFile.getName();
+                            SaveToDownloadReceiver.showNotification(context, notificationId, 1, source, () -> cancelled[0] = true);
                         }
                     }, 250);
                 } catch (Exception e) {
