@@ -5147,8 +5147,10 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                                 FileLog.d("saving file: correcting path from " + path + " to " + (sourceFile == null ? null : sourceFile.getAbsolutePath()));
                             }
                             if (sourceFile != null && sourceFile.exists()) {
-                                saveFileInternal(isMusic ? 3 : 2, sourceFile, name);
-                                copiedFiles++;
+                                Uri uri = saveFileInternal(isMusic ? 3 : 2, sourceFile, name);
+                                if (!cancelled && uri != null) {
+                                    copiedFiles++;
+                                }
                             }
                         }
                     } else {
@@ -5213,8 +5215,9 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                                 waitingForFile.await();
                             }
                             if (sourceFile.exists()) {
-                                copyFile(sourceFile, destFile, message.getMimeType());
-                                copiedFiles++;
+                                if (copyFile(sourceFile, destFile, message.getMimeType())) {
+                                    copiedFiles++;
+                                }
                             }
                         }
                     }

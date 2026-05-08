@@ -33457,6 +33457,32 @@ public class ChatActivity extends BaseFragment implements
         MediaController.saveFile(path, getParentActivity(), messageObject.isVideo() ? 1 : 0, null, null);
     }
 
+    private void openVideoInExternalPlayer(MessageObject messageObject) {
+        if (messageObject == null || getParentActivity() == null) {
+            return;
+        }
+        try {
+            File file = null;
+            if (!TextUtils.isEmpty(messageObject.messageOwner.attachPath)) {
+                file = new File(messageObject.messageOwner.attachPath);
+            }
+            if (file == null || !file.exists()) {
+                file = getFileLoader().getPathToMessage(messageObject.messageOwner);
+            }
+            if (file != null && file.exists()) {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                intent.setDataAndType(FileProvider.getUriForFile(getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", file), "video/mp4");
+                getParentActivity().startActivityForResult(intent, 500);
+            } else if (messageObject.getDocument() != null && !MediaStreamingProvider.openForStreaming(getParentActivity(), currentAccount, messageObject.getDocument(), messageObject)) {
+                alertUserOpenError(messageObject);
+            }
+        } catch (Exception e) {
+            FileLog.e(e);
+            alertUserOpenError(messageObject);
+        }
+    }
+
     private void translateOrResetMessage(MessageObject messageObject, View cell, String sourceLanguage) {
         if (messageObject.translated) {
             getMessageHelper().resetMessageContent(dialog_id, messageObject, false);
@@ -34390,9 +34416,7 @@ public class ChatActivity extends BaseFragment implements
                 showDialog(builder.create());
                 break;
             } case OPTION_OPEN_IN: {
-                if (!AndroidUtilities.openForView(selectedObject, getParentActivity(), themeDelegate, false) && selectedObject.getDocument() != null) {
-                    MediaStreamingProvider.openForStreaming(getParentActivity(), currentAccount, selectedObject.getDocument(), selectedObject);
-                }
+                openVideoInExternalPlayer(selectedObject);
                 break;
             } case OPTION_COPY_PHOTO: {
                 getMessageHelper().addMessageToClipboard(selectedObject, () -> {
