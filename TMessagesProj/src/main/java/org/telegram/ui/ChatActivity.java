@@ -3164,11 +3164,20 @@ public class ChatActivity extends BaseFragment implements
 
                 if (startLoadFromMessageId == 0) {
                     SharedPreferences sharedPreferences = MessagesController.getNotificationsSettings(currentAccount);
-                    int messageId = sharedPreferences.getInt("diditem" + NotificationsController.getSharedPrefKey(dialog_id, getTopicId()), 0);
+                    String dialogPositionKey = NotificationsController.getSharedPrefKey(dialog_id, getTopicId());
+                    int messageId = sharedPreferences.getInt("diditem" + dialogPositionKey, 0);
+                    if (messageId != 0 && isTopic && isSavedTopicPositionStale(sharedPreferences, dialogPositionKey)) {
+                        sharedPreferences.edit()
+                                .remove("diditem" + dialogPositionKey)
+                                .remove("diditemo" + dialogPositionKey)
+                                .remove("diditemtop" + dialogPositionKey)
+                                .apply();
+                        messageId = 0;
+                    }
                     if (messageId != 0) {
                         wasManualScroll = true;
                         loadingFromOldPosition = true;
-                        startLoadFromMessageOffset = sharedPreferences.getInt("diditemo" + NotificationsController.getSharedPrefKey(dialog_id, getTopicId()), 0);
+                        startLoadFromMessageOffset = sharedPreferences.getInt("diditemo" + dialogPositionKey, 0);
                         startLoadFromMessageId = messageId;
                     }
                 } else {
@@ -3408,6 +3417,41 @@ public class ChatActivity extends BaseFragment implements
             }
         };
         getMessagesController().checkSensitive(this, dialog_id, load, this::finishFragment);
+    }
+
+    private boolean isSavedTopicPositionStale(SharedPreferences sharedPreferences, String dialogPositionKey) {
+        if (forumTopic == null) {
+            return false;
+        }
+        int savedTopMessageId = sharedPreferences.getInt("diditemtop" + dialogPositionKey, 0);
+        int currentTopMessageId = forumTopic.top_message;
+        if (currentTopMessageId == 0 && forumTopic.topMessage != null) {
+            currentTopMessageId = forumTopic.topMessage.id;
+        }
+        return savedTopMessageId == 0 || currentTopMessageId > savedTopMessageId;
+    }
+
+    private int getCurrentTopicTopMessageId() {
+        int topMessageId = 0;
+        if (forumTopic != null) {
+            topMessageId = forumTopic.top_message;
+            if (topMessageId == 0 && forumTopic.topMessage != null) {
+                topMessageId = forumTopic.topMessage.id;
+            }
+        }
+        if (messages != null) {
+            for (int a = 0, n = messages.size(); a < n; a++) {
+                MessageObject messageObject = messages.get(a);
+                if (messageObject == null) {
+                    continue;
+                }
+                int messageId = messageObject.getId();
+                if (messageId > topMessageId && (!isTopic || messageObject.getTopicId() == getTopicId())) {
+                    topMessageId = messageId;
+                }
+            }
+        }
+        return topMessageId;
     }
 
     private void fillInviterId(boolean load) {
@@ -30308,12 +30352,18 @@ public class ChatActivity extends BaseFragment implements
                     }
                 }
                 if (messageId != 0) {
-                    editor.putInt("diditem" + NotificationsController.getSharedPrefKey(dialog_id, getTopicId()), messageId);
-                    editor.putInt("diditemo" + NotificationsController.getSharedPrefKey(dialog_id, getTopicId()), offset);
+                    String dialogPositionKey = NotificationsController.getSharedPrefKey(dialog_id, getTopicId());
+                    editor.putInt("diditem" + dialogPositionKey, messageId);
+                    editor.putInt("diditemo" + dialogPositionKey, offset);
+                    if (isTopic) {
+                        editor.putInt("diditemtop" + dialogPositionKey, getCurrentTopicTopMessageId());
+                    }
                 } else {
                     pausedOnLastMessage = true;
-                    editor.remove("diditem" + NotificationsController.getSharedPrefKey(dialog_id, getTopicId()));
-                    editor.remove("diditemo" + NotificationsController.getSharedPrefKey(dialog_id, getTopicId()));
+                    String dialogPositionKey = NotificationsController.getSharedPrefKey(dialog_id, getTopicId());
+                    editor.remove("diditem" + dialogPositionKey);
+                    editor.remove("diditemo" + dialogPositionKey);
+                    editor.remove("diditemtop" + dialogPositionKey);
                 }
                 editor.commit();
             }
