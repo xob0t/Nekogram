@@ -33939,7 +33939,6 @@ public class ChatActivity extends BaseFragment implements
                 }
                 boolean isMusic = selectedObject.isMusic();
                 boolean isDocument = selectedObject.isDocument();
-                boolean isVideo = selectedObject.isVideo();
 
                 if (selectedObject.isPoll()) {
                     final TLRPC.Message omsg = selectedObject.messageOwner;
@@ -33973,7 +33972,7 @@ public class ChatActivity extends BaseFragment implements
                             BulletinFactory.of(this).createDownloadBulletin(isMusicFinal ? BulletinFactory.FileType.AUDIOS : BulletinFactory.FileType.UNKNOWNS, count, themeDelegate).show();
                         }
                     });
-                } else if (isMusic || isDocument || isVideo) {
+                } else if (isMusic || isDocument) {
                     ArrayList<MessageObject> messageObjects;
                     if (selectedObjectGroup != null) {
                         messageObjects = new ArrayList<>(selectedObjectGroup.messages);
@@ -33982,14 +33981,12 @@ public class ChatActivity extends BaseFragment implements
                         messageObjects.add(selectedObject);
                     }
                     final boolean isMusicFinal = isMusic;
-                    final boolean isVideoFinal = isVideo;
                     MediaController.saveFilesFromMessages(getParentActivity(), getAccountInstance(), messageObjects, (count) -> {
                         if (getParentActivity() == null || fragmentView == null) {
                             return;
                         }
                         if (count > 0) {
-                            BulletinFactory.FileType fileType = isMusicFinal ? BulletinFactory.FileType.AUDIOS : isVideoFinal && count == 1 ? BulletinFactory.FileType.VIDEO_TO_DOWNLOADS : BulletinFactory.FileType.UNKNOWNS;
-                            BulletinFactory.of(this).createDownloadBulletin(fileType, count, themeDelegate).show();
+                            BulletinFactory.of(this).createDownloadBulletin(isMusicFinal ? BulletinFactory.FileType.AUDIOS : BulletinFactory.FileType.UNKNOWNS, count, themeDelegate).show();
                         }
                     });
                 } else if (selectedObject.isLivePhoto()) {
@@ -34440,7 +34437,7 @@ public class ChatActivity extends BaseFragment implements
                 showDialog(builder.create());
                 break;
             } case OPTION_OPEN_IN: {
-                if (!AndroidUtilities.openForView(selectedObject, getParentActivity(), themeDelegate, false) && selectedObject.getDocument() != null) {
+                if (!AndroidUtilities.openForView(selectedObject, getParentActivity(), themeDelegate, true)) {
                     MediaStreamingProvider.openForStreaming(getParentActivity(), currentAccount, selectedObject.getDocument(), selectedObject);
                 }
                 break;
@@ -46471,17 +46468,10 @@ public class ChatActivity extends BaseFragment implements
                                     icons.add(R.drawable.msg_addbot);
                                 }
                             }
-                        } else if (selectedObject.isVideo() && !noforwardsOrPaidMedia && !selectedObject.hasRevealedExtendedMedia() && !selectedObject.needDrawBluredPreview()) {
-                            if (selectedObject.getDocument() != null && !selectedObject.isVoiceOnce() && !selectedObject.isRoundOnce()) {
-                                items.add(LocaleController.getString(R.string.SaveToDownloads));
-                                options.add(OPTION_SAVE_TO_DOWNLOADS_OR_MUSIC);
-                                icons.add(R.drawable.msg_download);
-                            }
-                            if (NekoConfig.showOpenIn) {
-                                items.add(LocaleController.getString(R.string.OpenInExternalApp));
-                                options.add(OPTION_OPEN_IN);
-                                icons.add(R.drawable.msg_openin);
-                            }
+                        } else if (NekoConfig.showOpenIn && selectedObject.isVideo() && !noforwardsOrPaidMedia && !selectedObject.hasRevealedExtendedMedia() && !selectedObject.needDrawBluredPreview()) {
+                            items.add(LocaleController.getString(R.string.OpenInExternalApp));
+                            options.add(OPTION_OPEN_IN);
+                            icons.add(R.drawable.msg_openin);
                         } else if (selectedObject.isMusic() && !noforwardsOrPaidMedia && !selectedObject.isVoiceOnce() && !selectedObject.isRoundOnce()) {
                             items.add(LocaleController.getString(R.string.SaveToMusic));
                             options.add(OPTION_SAVE_TO_DOWNLOADS_OR_MUSIC);
@@ -46510,11 +46500,6 @@ public class ChatActivity extends BaseFragment implements
                                 items.add(LocaleController.getString(R.string.SaveToGallery));
                                 options.add(OPTION_SAVE_TO_GALLERY);
                                 icons.add(R.drawable.msg_gallery);
-                                if (selectedObject.getDocument() != null && !selectedObject.isVoiceOnce() && !selectedObject.isRoundOnce()) {
-                                    items.add(LocaleController.getString(R.string.SaveToDownloads));
-                                    options.add(OPTION_SAVE_TO_DOWNLOADS_OR_MUSIC);
-                                    icons.add(R.drawable.msg_download);
-                                }
                                 items.add(LocaleController.getString(R.string.ShareFile));
                                 options.add(OPTION_SHARE);
                                 icons.add(R.drawable.msg_shareout);
@@ -46820,11 +46805,6 @@ public class ChatActivity extends BaseFragment implements
                         items.add(LocaleController.getString(R.string.SaveToGallery));
                         options.add(OPTION_SAVE_TO_GALLERY);
                         icons.add(R.drawable.msg_gallery);
-                        if (selectedObject.getDocument() != null && !selectedObject.isVoiceOnce() && !selectedObject.isRoundOnce()) {
-                            items.add(LocaleController.getString(R.string.SaveToDownloads));
-                            options.add(OPTION_SAVE_TO_DOWNLOADS_OR_MUSIC);
-                            icons.add(R.drawable.msg_download);
-                        }
                         items.add(LocaleController.getString(R.string.ShareFile));
                         options.add(OPTION_SHARE);
                         icons.add(R.drawable.msg_shareout);
