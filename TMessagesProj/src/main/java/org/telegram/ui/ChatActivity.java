@@ -329,7 +329,6 @@ import tw.nekomimi.nekogram.helpers.MessageHelper;
 import tw.nekomimi.nekogram.helpers.QrHelper;
 import tw.nekomimi.nekogram.helpers.EmojiHelper;
 import tw.nekomimi.nekogram.helpers.WebAppHelper;
-import tw.nekomimi.nekogram.streaming.MediaStreamingProvider;
 import tw.nekomimi.nekogram.translator.Translator;
 import tw.nekomimi.nekogram.translator.TranslatorSettingsPopupWrapper;
 
@@ -33507,24 +33506,42 @@ public class ChatActivity extends BaseFragment implements
         MediaController.saveFile(path, getParentActivity(), messageObject.isVideo() ? 1 : 0, null, null);
     }
 
+    private File getExternalVideoFile(MessageObject messageObject) {
+        if (messageObject == null || messageObject.messageOwner == null) {
+            return null;
+        }
+        File file = null;
+        if (!TextUtils.isEmpty(messageObject.messageOwner.attachPath)) {
+            file = new File(messageObject.messageOwner.attachPath);
+        }
+        if (file == null || !file.exists()) {
+            file = getFileLoader().getPathToMessage(messageObject.messageOwner);
+        }
+        if ((file == null || !file.exists()) && messageObject.cachedQuality != null && messageObject.cachedQuality.isCached() && messageObject.cachedQuality.uri != null) {
+            file = new File(messageObject.cachedQuality.uri.getPath());
+        }
+        if ((file == null || !file.exists()) && messageObject.qualityToSave != null) {
+            file = FileLoader.getInstance(currentAccount).getPathToAttach(messageObject.qualityToSave, null, false, true);
+        }
+        return file != null && file.exists() ? file : null;
+    }
+
+    private boolean canOpenVideoInExternalPlayer(MessageObject messageObject) {
+        return getExternalVideoFile(messageObject) != null;
+    }
+
     private void openVideoInExternalPlayer(MessageObject messageObject) {
         if (messageObject == null || getParentActivity() == null) {
             return;
         }
         try {
-            File file = null;
-            if (!TextUtils.isEmpty(messageObject.messageOwner.attachPath)) {
-                file = new File(messageObject.messageOwner.attachPath);
-            }
-            if (file == null || !file.exists()) {
-                file = getFileLoader().getPathToMessage(messageObject.messageOwner);
-            }
+            File file = getExternalVideoFile(messageObject);
             if (file != null && file.exists()) {
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 intent.setDataAndType(FileProvider.getUriForFile(getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", file), "video/mp4");
                 getParentActivity().startActivityForResult(intent, 500);
-            } else if (messageObject.getDocument() != null && !MediaStreamingProvider.openForStreaming(getParentActivity(), currentAccount, messageObject.getDocument(), messageObject)) {
+            } else {
                 alertUserOpenError(messageObject);
             }
         } catch (Exception e) {
@@ -46501,9 +46518,11 @@ public class ChatActivity extends BaseFragment implements
                                 options.add(OPTION_SAVE_TO_DOWNLOADS_OR_MUSIC);
                                 icons.add(R.drawable.msg_download);
                             }
-                            items.add(LocaleController.getString(R.string.OpenInExternalApp));
-                            options.add(OPTION_OPEN_IN);
-                            icons.add(R.drawable.msg_openin);
+                            if (canOpenVideoInExternalPlayer(selectedObject)) {
+                                items.add(LocaleController.getString(R.string.OpenInExternalApp));
+                                options.add(OPTION_OPEN_IN);
+                                icons.add(R.drawable.msg_openin);
+                            }
                         } else if (selectedObject.isMusic() && !noforwardsOrPaidMedia && !selectedObject.isVoiceOnce() && !selectedObject.isRoundOnce()) {
                             items.add(LocaleController.getString(R.string.SaveToMusic));
                             options.add(OPTION_SAVE_TO_DOWNLOADS_OR_MUSIC);
@@ -46540,9 +46559,11 @@ public class ChatActivity extends BaseFragment implements
                                 items.add(LocaleController.getString(R.string.ShareFile));
                                 options.add(OPTION_SHARE);
                                 icons.add(R.drawable.msg_shareout);
-                                items.add(LocaleController.getString(R.string.OpenInExternalApp));
-                                options.add(OPTION_OPEN_IN);
-                                icons.add(R.drawable.msg_openin);
+                                if (canOpenVideoInExternalPlayer(selectedObject)) {
+                                    items.add(LocaleController.getString(R.string.OpenInExternalApp));
+                                    options.add(OPTION_OPEN_IN);
+                                    icons.add(R.drawable.msg_openin);
+                                }
                             }
                         } else if (selectedObject.isMusic() && !selectedObject.isVoiceOnce() && !selectedObject.isRoundOnce()) {
                             items.add(LocaleController.getString(R.string.SaveToMusic));
@@ -46628,7 +46649,7 @@ public class ChatActivity extends BaseFragment implements
                         items.add(LocaleController.getString(R.string.ShareFile));
                         options.add(OPTION_SHARE);
                         icons.add(R.drawable.msg_shareout);
-                        if (selectedObject.isVideo()) {
+                        if (selectedObject.isVideo() && canOpenVideoInExternalPlayer(selectedObject)) {
                             items.add(LocaleController.getString(R.string.OpenInExternalApp));
                             options.add(OPTION_OPEN_IN);
                             icons.add(R.drawable.msg_openin);
@@ -46848,9 +46869,11 @@ public class ChatActivity extends BaseFragment implements
                         items.add(LocaleController.getString(R.string.ShareFile));
                         options.add(OPTION_SHARE);
                         icons.add(R.drawable.msg_shareout);
-                        items.add(LocaleController.getString(R.string.OpenInExternalApp));
-                        options.add(OPTION_OPEN_IN);
-                        icons.add(R.drawable.msg_openin);
+                        if (canOpenVideoInExternalPlayer(selectedObject)) {
+                            items.add(LocaleController.getString(R.string.OpenInExternalApp));
+                            options.add(OPTION_OPEN_IN);
+                            icons.add(R.drawable.msg_openin);
+                        }
                     } else if (selectedObject.isMusic() && !selectedObject.isVoiceOnce() && !selectedObject.isRoundOnce()) {
                         items.add(LocaleController.getString(R.string.SaveToMusic));
                         options.add(OPTION_SAVE_TO_DOWNLOADS_OR_MUSIC);
