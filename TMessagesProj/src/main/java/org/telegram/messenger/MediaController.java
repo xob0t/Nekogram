@@ -5074,7 +5074,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         private CountDownLatch waitingForFile;
         private MessagesStorage.IntCallback onFinishRunnable;
         private boolean isMusic;
-        private String notificationSource;
 
         private final int notificationId;
 
@@ -5083,7 +5082,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
             messageObjects = messages;
             onFinishRunnable = onFinish;
             isMusic = messages.get(0).isMusic();
-            notificationSource = getNotificationSource(messages);
             currentAccount.getNotificationCenter().addObserver(this, NotificationCenter.fileLoaded);
             currentAccount.getNotificationCenter().addObserver(this, NotificationCenter.fileLoadProgressChanged);
             currentAccount.getNotificationCenter().addObserver(this, NotificationCenter.fileLoadFailed);
@@ -5093,7 +5091,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         public void start(Context context) {
             AndroidUtilities.runOnUIThread(() -> {
                 if (!finished) {
-                    SaveToDownloadReceiver.showNotification(context, notificationId, messageObjects.size(), notificationSource, this::cancel);
+                    SaveToDownloadReceiver.showNotification(context, notificationId, messageObjects.size(), () -> cancelled = true);
                 }
             }, 250);
 
@@ -5216,9 +5214,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                                 addMessageToLoad(message);
                                 waitingForFile.await();
                             }
-                            if (cancelled) {
-                                break;
-                            }
                             if (sourceFile.exists()) {
                                 if (copyFile(sourceFile, destFile, message.getMimeType())) {
                                     copiedFiles++;
@@ -5232,50 +5227,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 }
 
             }).start();
-        }
-
-        private String getNotificationSource(ArrayList<MessageObject> messages) {
-            if (messages == null || messages.isEmpty()) {
-                return null;
-            }
-            if (messages.size() > 1) {
-                return LocaleController.formatPluralString("SaveToDownloadCount", messages.size());
-            }
-            TLRPC.Document document = getDocumentToLoad(messages.get(0));
-            String fileName = document != null ? FileLoader.getDocumentFileName(document) : null;
-            if (TextUtils.isEmpty(fileName)) {
-                fileName = messages.get(0).getFileName();
-            }
-            return fileName;
-        }
-
-        private TLRPC.Document getDocumentToLoad(MessageObject messageObject) {
-            if (messageObject == null) {
-                return null;
-            }
-            if (messageObject.qualityToSave != null) {
-                return messageObject.qualityToSave;
-            }
-            return messageObject.getDocument();
-        }
-
-        private void cancel() {
-            cancelled = true;
-            AndroidUtilities.runOnUIThread(() -> {
-                ArrayList<MessageObject> loadingObjects = new ArrayList<>(loadingMessageObjects.values());
-                for (MessageObject messageObject : loadingObjects) {
-                    TLRPC.Document document = getDocumentToLoad(messageObject);
-                    if (document != null) {
-                        currentAccount.getFileLoader().cancelLoadFile(document);
-                    }
-                }
-                loadingMessageObjects.clear();
-                CountDownLatch latch = waitingForFile;
-                if (latch != null) {
-                    latch.countDown();
-                }
-                checkIfFinished();
-            });
         }
 
         private void checkIfFinished() {
@@ -5419,10 +5370,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                     document = messageObject.qualityToSave;
                 }
                 if (document == null) {
-                    CountDownLatch latch = waitingForFile;
-                    if (latch != null) {
-                        latch.countDown();
-                    }
                     return;
                 }
                 String fileName = FileLoader.getAttachFileName(document);
