@@ -947,8 +947,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
             if (invalidateScrollY && (rightSlidingDialogContainer == null || !rightSlidingDialogContainer.hasFragment()) && progressToActionMode == 0) {
                 invalidateScrollY = false;
-                if (NekoConfig.disablePullToSearch && !searchIsShowed && !searching) {
-                    collapsePullSearchOffset(false);
+                if (isPullSearchDisabled()) {
+                    collapsePullSearchOffset();
                 } else {
                     int firstItemPosition = hasHiddenArchive() && viewPages[0].dialogsType == DIALOGS_TYPE_DEFAULT ? 1 : 0;
                     DialogsRecyclerView recyclerView = viewPages[0].listView;
@@ -2272,9 +2272,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                 public void onAnimationEnd(Animator animation) {
                                     super.onAnimationEnd(animation);
                                     setScrollEnabled(true);
-                                    if (NekoConfig.disablePullToSearch && !searchIsShowed && !searching) {
-                                        collapsePullSearchOffset(true);
-                                    }
                                 }
                             });
                             valueAnimator.start();
@@ -4217,7 +4214,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         }
                     }
 
-                    if (viewPage.dialogsType == 0 && viewPage.listView.getViewOffset() != 0 && dy > 0 && isDragging) {
+                    if (isPullSearchDisabled() && viewPage.listView.getViewOffset() != 0) {
+                        viewPage.listView.setViewsOffset(0);
+                    }
+                    if (!isPullSearchDisabled() && viewPage.dialogsType == 0 && viewPage.listView.getViewOffset() != 0 && dy > 0 && isDragging) {
                         float ty = (int) viewPage.listView.getViewOffset();
                         ty -= dy;
                         if (ty < 0) {
@@ -4268,7 +4268,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                     }
                                 }
                             }
-                            if (viewPage.archivePullViewState == ARCHIVE_ITEM_STATE_HIDDEN && measuredDy - usedDy != 0 && dy < 0 && isDragging) {
+                            if (!isPullSearchDisabled() && viewPage.archivePullViewState == ARCHIVE_ITEM_STATE_HIDDEN && measuredDy - usedDy != 0 && dy < 0 && isDragging) {
                                 float ty;
                                 float tk = (viewPage.listView.getViewOffset() / PullForegroundDrawable.getMaxOverscroll());
                                 tk = 1f - tk;
@@ -4456,9 +4456,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     if (newState == RecyclerView.SCROLL_STATE_IDLE) {
                         wasManualScroll = false;
                         disableActionBarScrolling = false;
-                        if (NekoConfig.disablePullToSearch && recyclerView == viewPages[0].listView && !searchIsShowed && !searching && actionBar != null && !actionBar.isActionModeShowed()) {
-                            collapsePullSearchOffset(true);
-                        }
                         if (waitingForScrollFinished) {
                             waitingForScrollFinished = false;
                             if (updatePullAfterScroll) {
@@ -4523,8 +4520,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                             }
                         }
                     }
-                    if (NekoConfig.disablePullToSearch && recyclerView == viewPages[0].listView && !searchIsShowed && !searching && actionBar != null && !actionBar.isActionModeShowed()) {
-                        collapsePullSearchOffset(false);
+                    if (isPullSearchDisabled() && recyclerView == viewPages[0].listView && actionBar != null && !actionBar.isActionModeShowed()) {
+                        collapsePullSearchOffset();
                     }
                     if (!NekoConfig.disablePullToSearch && !hasStories && recyclerView == viewPages[0].listView && !searching && actionBar != null && !actionBar.isActionModeShowed() && !disableActionBarScrolling && !rightSlidingDialogContainer.hasFragment()) {
                         if (dy > 0 && hasHiddenArchive() && viewPages[0].dialogsType == DIALOGS_TYPE_DEFAULT) {
@@ -5680,34 +5677,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 && (rightSlidingDialogContainer == null || !rightSlidingDialogContainer.hasFragment());
     }
 
-    private void collapsePullSearchOffset(boolean syncListPosition) {
+    private void collapsePullSearchOffset() {
         float collapsedOffset = getCollapsedSearchScrollOffset();
         if (scrollYOffset > collapsedOffset) {
             setScrollY(collapsedOffset);
-        }
-        if (!syncListPosition) {
-            return;
-        }
-        if (rightSlidingDialogContainer != null && rightSlidingDialogContainer.hasFragment()) {
-            return;
-        }
-        if (viewPages == null || viewPages[0] == null || viewPages[0].listView == null || viewPages[0].layoutManager == null) {
-            return;
-        }
-        ViewPage viewPage = viewPages[0];
-        if (viewPage.listView.getViewOffset() != 0 || viewPage.dialogsType != DIALOGS_TYPE_DEFAULT) {
-            return;
-        }
-        if (hasHiddenArchive() && viewPage.archivePullViewState == ARCHIVE_ITEM_STATE_HIDDEN) {
-            int firstVisiblePosition = viewPage.layoutManager.findFirstVisibleItemPosition();
-            if (firstVisiblePosition == 0 || firstVisiblePosition == 1) {
-                viewPage.layoutManager.scrollToPositionWithOffset(1, (int) collapsedOffset);
-            }
-        } else if (!hasHiddenArchive()) {
-            int firstVisiblePosition = viewPage.layoutManager.findFirstVisibleItemPosition();
-            if (firstVisiblePosition == 0) {
-                viewPage.layoutManager.scrollToPositionWithOffset(0, (int) collapsedOffset);
-            }
         }
     }
 
@@ -5855,7 +5828,14 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         return -getMaxScrollYOffset();
     }
 
+    private boolean isPullSearchDisabled() {
+        return NekoConfig.disablePullToSearch && !searchIsShowed && !searching;
+    }
+
     private int getSearchFieldLayoutHeight() {
+        if (isPullSearchDisabled()) {
+            return 0;
+        }
         return dp(SEARCH_FIELD_HEIGHT);
     }
 
