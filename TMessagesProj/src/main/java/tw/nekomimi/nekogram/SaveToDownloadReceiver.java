@@ -63,12 +63,10 @@ public class SaveToDownloadReceiver extends BroadcastReceiver {
                 .putExtra(EXTRA_ID, notificationId);
         var pendingIntent = PendingIntent.getBroadcast(context, notificationId, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        var contentText = TextUtils.isEmpty(source) ? LocaleController.formatPluralString("SaveToDownloadCount", count) : source;
         var builder = new NotificationCompat.Builder(context, NotificationsController.OTHER_NOTIFICATIONS_CHANNEL)
                 .setContentTitle(LocaleController.getString(R.string.SaveToDownloads))
                 .setTicker(LocaleController.formatPluralString("SaveToDownloadCount", count))
-                .setContentText(contentText)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(contentText))
+                .setContentText(TextUtils.isEmpty(source) ? LocaleController.formatPluralString("SaveToDownloadCount", count) : source)
                 .setSubText(LocaleController.getString(R.string.AppName))
                 .setCategory(NotificationCompat.CATEGORY_STATUS)
                 .setProgress(100, 0, true)

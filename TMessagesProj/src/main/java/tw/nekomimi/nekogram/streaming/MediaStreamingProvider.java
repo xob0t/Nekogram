@@ -15,7 +15,6 @@ import android.system.OsConstants;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DataSpec;
 
@@ -23,7 +22,6 @@ import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.FileStreamLoadOperation;
-import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.secretmedia.ExtendedDefaultDataSourceFactory;
 import org.telegram.tgnet.TLRPC;
 
@@ -120,9 +118,6 @@ public class MediaStreamingProvider extends ContentProvider {
     }
 
     public static boolean openForStreaming(Activity activity, int currentAccount, TLRPC.Document document, Object parent) {
-        if (parent instanceof MessageObject) {
-            parent = ((MessageObject) parent).messageOwner;
-        }
         var uri = getStreamingUri(currentAccount, document, parent);
         if (uri == null) {
             return false;
@@ -162,7 +157,7 @@ public class MediaStreamingProvider extends ContentProvider {
                 var bytesRead = dataSource.read(data, 0, size);
                 dataSource.close();
 
-                return bytesRead == C.RESULT_END_OF_INPUT ? 0 : bytesRead;
+                return bytesRead;
             } catch (IOException e) {
                 FileLog.e(e);
                 throw new ErrnoException("onRead", OsConstants.EBADF);
