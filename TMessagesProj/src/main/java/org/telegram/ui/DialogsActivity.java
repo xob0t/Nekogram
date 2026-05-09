@@ -1601,6 +1601,21 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         return -lerp(dp(4), dp(SEARCH_FIELD_HEIGHT), animatorSearchVisible.getFloatValue());
     }
 
+    private float getRightFragmentTitleAlpha() {
+        if (rightSlidingDialogContainer == null || !rightSlidingDialogContainer.hasFragment()) {
+            return 1f;
+        }
+        return 1f - rightSlidingDialogContainer.openedProgress;
+    }
+
+    private void applyActionBarTitleAlpha(float alpha) {
+        float titleAlpha = alpha * getRightFragmentTitleAlpha();
+        actionBar.getTitlesContainer().setAlpha(titleAlpha);
+        actionBar.getTitlesContainer().setVisibility(titleAlpha > 0 ? View.VISIBLE : View.INVISIBLE);
+        actionBar.getAdditionalSubTitleOverlayContainer().setAlpha(titleAlpha);
+        actionBar.getAdditionalSubTitleOverlayContainer().setVisibility(titleAlpha > 0 ? View.VISIBLE : View.INVISIBLE);
+    }
+
     private void updateStoriesViewAlpha(float alpha) {
         final float factorSearch = Utilities.clamp(searchAnimationProgress * 2, 1f, 0f);
         dialogStoriesCell.setAlpha((1f - progressToActionMode) * alpha * progressToDialogStoriesCell * (1f - factorSearch));
@@ -1651,10 +1666,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             actionBar.getAdditionalSubTitleOverlayContainer().setScaleX(s);
 
             final float titleAlpha = containersAlpha * (1f - progressToActionMode);
-            actionBar.getTitlesContainer().setAlpha(titleAlpha);
-            actionBar.getTitlesContainer().setVisibility(titleAlpha > 0 ? View.VISIBLE : View.INVISIBLE);
-            actionBar.getAdditionalSubTitleOverlayContainer().setAlpha(titleAlpha);
-            actionBar.getAdditionalSubTitleOverlayContainer().setVisibility(titleAlpha > 0 ? View.VISIBLE : View.INVISIBLE);
+            applyActionBarTitleAlpha(titleAlpha);
         } else {
             actionBar.getTitlesContainer().setScaleY(1f);
             actionBar.getTitlesContainer().setScaleX(1f);
@@ -1664,10 +1676,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             actionBar.getAdditionalSubTitleOverlayContainer().setScaleX(1f);
 
             final float titleAlpha = 1f - progressToActionMode;
-            actionBar.getTitlesContainer().setAlpha(titleAlpha);
-            actionBar.getTitlesContainer().setVisibility(titleAlpha > 0 ? View.VISIBLE : View.INVISIBLE);
-            actionBar.getAdditionalSubTitleOverlayContainer().setAlpha(titleAlpha);
-            actionBar.getAdditionalSubTitleOverlayContainer().setVisibility(titleAlpha > 0 ? View.VISIBLE : View.INVISIBLE);
+            applyActionBarTitleAlpha(titleAlpha);
         }
     }
 
@@ -5569,12 +5578,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     fragmentView.invalidate();
                 }
 
-                if (actionBar.getTitleTextView() != null) {
-                    actionBar.getTitleTextView().setAlpha(1f - progress);
-                    if (actionBar.getTitleTextView().getAlpha() > 0) {
-                        actionBar.getTitleTextView().setVisibility(View.VISIBLE);
-                    }
-                }
+                applyActionBarTitleAlpha(1f - progressToActionMode);
                 if (actionBar.getBackButton() != null) {
                     actionBar.getBackButton().setAlpha(progress == 1f ? 0f : 1f);
                 }
