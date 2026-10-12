@@ -139,6 +139,7 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
         closeIcon.setScaleType(ImageView.ScaleType.CENTER);
         closeIcon.setImageResource(R.drawable.miniplayer_close);
         closeIcon.setVisibility(GONE);
+        closeIcon.setContentDescription(LocaleController.getString(R.string.ClearButton));
         closeIcon.setOnClickListener(v -> {
             if (hasRemovableFilters()) {
                 if (searchFiltersListener != null) {
@@ -172,6 +173,10 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
         setWillNotDraw(false);
         checkUi_editTextPaddings();
         updateColors();
+    }
+
+    public void setHintText(CharSequence text, boolean animated) {
+        editText.setHintText(text, animated);
     }
 
     public void addAdditionalIcon(View icon) {
@@ -497,11 +502,12 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
             FiltersView.MediaFilterData filter = localFilters.get(i);
             ActionBarMenuItem.SearchFilterView searchFilterView;
             if (filter.reaction != null) {
-                searchFilterView = new ActionBarMenuItem.ReactionFilterView(getContext(), resourcesProvider, true);
+                searchFilterView = new ActionBarMenuItem.ReactionFilterView(getContext(), resourcesProvider, false);
             } else {
-                searchFilterView = new ActionBarMenuItem.SearchFilterView(getContext(), resourcesProvider, true);
+                searchFilterView = new ActionBarMenuItem.SearchFilterView(getContext(), resourcesProvider, false);
             }
 
+            searchFilterView.setGlass();
             searchFilterView.setData(filter);
             searchFilterView.setOnClickListener(view -> {
                 int index = currentSearchFilters.indexOf(searchFilterView.getFilter());

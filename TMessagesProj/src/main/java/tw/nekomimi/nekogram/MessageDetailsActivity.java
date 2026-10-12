@@ -41,8 +41,8 @@ import java.util.Locale;
 
 import tw.nekomimi.nekogram.helpers.MessageHelper;
 import tw.nekomimi.nekogram.helpers.UserHelper;
-import tw.nekomimi.nekogram.helpers.WebAppHelper;
 import tw.nekomimi.nekogram.settings.BaseNekoSettingsActivity;
+import tw.nekomimi.nekogram.tlv.TlViewer;
 
 public class MessageDetailsActivity extends BaseNekoSettingsActivity implements NotificationCenter.NotificationCenterDelegate {
 
@@ -351,8 +351,6 @@ public class MessageDetailsActivity extends BaseNekoSettingsActivity implements 
         if (!TextUtils.isEmpty(messageObject.messageOwner.message) && MessageHelper.isLinkOrEmojiOnlyMessage(messageObject)) {
             items.add(TextDetailSettingsCellFactory.of(linkOrEmojiOnlyRow, "Link or emoji only", "Yes"));
         }
-        items.add(UItem.asShadow(null));
-
 
         items.add(TextSettingsCellFactory.of(exportRow, LocaleController.getString(R.string.ViewAsJson)).accent());
         items.add(UItem.asShadow(null));
@@ -476,7 +474,7 @@ public class MessageDetailsActivity extends BaseNekoSettingsActivity implements 
 
             showDialog(dialog);
         } else if (id == exportRow) {
-            WebAppHelper.openTLViewer(this,
+            TlViewer.openTlViewer(this,
                     messageObject.currentEvent != null ? messageObject.currentEvent : messageObject.messageOwner);
         }
     }

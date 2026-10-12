@@ -30,22 +30,20 @@ import org.telegram.ui.Cells.SettingsSearchCell;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.FragmentFloatingButton;
-import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.UniversalAdapter;
 import org.telegram.ui.ProfileActivity.SearchAdapter.SearchResult;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 
 import me.vkryl.android.animator.BoolAnimator;
 import me.vkryl.android.animator.FactorAnimator;
+import tw.nekomimi.nekogram.Extra;
 import tw.nekomimi.nekogram.accessibility.AccessibilitySettingsActivity;
 import tw.nekomimi.nekogram.helpers.CloudSettingsHelper;
 import tw.nekomimi.nekogram.helpers.PasscodeHelper;
-import tw.nekomimi.nekogram.helpers.remote.ConfigHelper;
 
 public class NekoSettingsActivity extends BaseNekoSettingsActivity implements FactorAnimator.Target {
 
@@ -53,8 +51,6 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity implements Fa
 
     private final BoolAnimator animatorSearchPageVisible = new BoolAnimator(ANIMATOR_ID_SEARCH_PAGE_VISIBLE,
             this, CubicBezierInterpolator.EASE_OUT_QUINT, 350);
-
-    private final List<ConfigHelper.News> newsList = new ArrayList<>();
 
     private final int generalRow = rowId++;
     private final int appearanceRow = rowId++;
@@ -64,12 +60,8 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity implements Fa
     private final int accessibilityRow = rowId++;
 
     private final int channelRow = rowId++;
-    private final int websiteRow = rowId++;
     private final int sourceCodeRow = rowId++;
     private final int translationRow = rowId++;
-    private final int donateRow = rowId++;
-
-    private final int sponsorRow = 100;
 
     private ActionBarMenuItem syncItem;
     private final ArrayList<SearchResult> searchArray = createSearchArray();
@@ -101,7 +93,7 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity implements Fa
         titleView.setGravity(Gravity.CENTER);
         titleView.setSingleLine();
         titleView.setEllipsize(TextUtils.TruncateAt.END);
-        titleView.setText(LocaleController.getString(R.string.AppNameNeko));
+        titleView.setText(LocaleController.getString(R.string.Nekogram));
         titleView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
         topView.addView(titleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, 138.333f - 12, 0, 0));
 
@@ -139,9 +131,11 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity implements Fa
                 search(editText.getText().toString());
             }
         });
-        syncItem = menu.addItem(1, R.drawable.cloud_sync);
-        syncItem.setContentDescription(LocaleController.getString(R.string.CloudConfig));
-        syncItem.setOnClickListener(v -> CloudSettingsHelper.getInstance().showDialog(this));
+        if (Extra.getHelperBot() != null) {
+            syncItem = menu.addItem(1, R.drawable.cloud_sync);
+            syncItem.setContentDescription(LocaleController.getString(R.string.CloudConfig));
+            syncItem.setOnClickListener(v -> CloudSettingsHelper.getInstance().showDialog(this));
+        }
 
         return fragmentView;
     }
@@ -175,21 +169,10 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity implements Fa
         items.add(UItem.asShadow(null));
 
         items.add(UItem.asButton(channelRow, R.drawable.msg_channel, LocaleController.getString(R.string.OfficialChannel), "@" + LocaleController.getString(R.string.OfficialChannelUsername)).slug("channel"));
-        items.add(UItem.asButton(websiteRow, R.drawable.msg_language, LocaleController.getString(R.string.OfficialSite), "nekogram.app").slug("website"));
         items.add(UItem.asButton(sourceCodeRow, R.drawable.msg_link, LocaleController.getString(R.string.ViewSourceCode), "GitHub").slug("sourceCode"));
         items.add(UItem.asButtonSubtext(translationRow, R.drawable.msg_translate, LocaleController.getString(R.string.Translation), LocaleController.getString(R.string.TranslationAbout)).slug("translation"));
-        items.add(UItem.asButtonSubtext(donateRow, R.drawable.msg_input_like, LocaleController.getString(R.string.Donate), LocaleController.getString(R.string.DonateAbout)).slug("donate"));
         items.add(UItem.asShadow(null));
 
-        newsList.clear();
-        newsList.addAll(ConfigHelper.getNewsForSettings());
-        if (!newsList.isEmpty()) {
-            var newsId = 0;
-            for (var news : newsList) {
-                items.add(TextDetailSettingsCellFactory.of(sponsorRow + newsId++, news.title, news.summary));
-            }
-            items.add(UItem.asShadow(null));
-        }
     }
 
     @Override
@@ -215,37 +198,15 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity implements Fa
             presentFragment(new AccessibilitySettingsActivity());
         } else if (id == channelRow) {
             getMessagesController().openByUserName(LocaleController.getString(R.string.OfficialChannelUsername), this, 1);
-        } else if (id == donateRow) {
-            presentFragment(new NekoDonateActivity());
         } else if (id == translationRow) {
             Browser.openUrl(getParentActivity(), "https://neko.crowdin.com/nekogram");
-        } else if (id == websiteRow) {
-            Browser.openUrl(getParentActivity(), "https://nekogram.app");
         } else if (id == sourceCodeRow) {
-            Browser.openUrl(getParentActivity(), "https://github.com/Nekogram/Nekogram");
-        } else if (id >= sponsorRow) {
-            var news = newsList.get(id - sponsorRow);
-            Browser.openUrl(getParentActivity(), news.url);
+            Browser.openUrl(getParentActivity(), "https://github.com/risin42/Nekogram");
         }
     }
 
     @Override
     protected boolean onItemLongClick(UItem item, View view, int position, float x, float y) {
-        var id = item.id;
-        if (id >= sponsorRow) {
-            var news = newsList.get(id - sponsorRow);
-            if (news.id != null) {
-                ItemOptions.makeOptions(this, view)
-                        .setScrimViewBackground(listView.getClipBackground(view))
-                        .add(R.drawable.msg_cancel, LocaleController.getString(R.string.Hide), () -> {
-                            ConfigHelper.removeNews(news.id);
-                            listView.adapter.update(true);
-                        })
-                        .setMinWidth(190)
-                        .show();
-                return true;
-            }
-        }
         return super.onItemLongClick(item, view, position, x, y);
     }
 
@@ -261,7 +222,7 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity implements Fa
 
     @Override
     public void onFactorChanged(int id, float factor, float fraction, FactorAnimator callee) {
-        if (id == ANIMATOR_ID_SEARCH_PAGE_VISIBLE) {
+        if (id == ANIMATOR_ID_SEARCH_PAGE_VISIBLE && syncItem != null) {
             FragmentFloatingButton.setAnimatedVisibility(syncItem, 1f - factor);
         }
     }
@@ -311,8 +272,7 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity implements Fa
                 searchResultList.add(new SearchResult(i * 1000 + item.id, item.text.toString(), null, fragmentTitle, fragmentTitle.equals(headerText) ? null : headerText, icon, () -> {
                     var fragment1 = createFragment(icon);
                     presentFragment(fragment1);
-                    AndroidUtilities.runOnUIThread(() -> fragment1.scrollToRow(item.slug, () -> {
-                    }));
+                    fragment1.scrollToRow(item.slug, null);
                 }));
             }
             searchResultList.add(new SearchResult(10000 + i, fragmentTitle, icon, () -> presentFragment(fragment)));
@@ -320,15 +280,12 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity implements Fa
         searchResultList.add(new SearchResult(8000, LocaleController.getString(R.string.EmojiUseDefault), null, LocaleController.getString(R.string.Chat), LocaleController.getString(R.string.EmojiSets), R.drawable.msg_theme, () -> {
             var fragment = new NekoEmojiSettingsActivity();
             presentFragment(fragment);
-            AndroidUtilities.runOnUIThread(() -> fragment.scrollToRow("useSystemEmoji", () -> {
-            }));
+            fragment.scrollToRow("useSystemEmoji", null);
         }));
 
         searchResultList.add(new SearchResult(20000, LocaleController.getString(R.string.OfficialChannel), "@" + LocaleController.getString(R.string.OfficialChannelUsername), R.drawable.msg2_help, () -> getMessagesController().openByUserName(LocaleController.getString(R.string.OfficialChannelUsername), this, 1)));
-        searchResultList.add(new SearchResult(20001, LocaleController.getString(R.string.OfficialSite), "nekogram.app", R.drawable.msg2_help, () -> Browser.openUrl(getParentActivity(), "https://nekogram.app")));
-        searchResultList.add(new SearchResult(20002, LocaleController.getString(R.string.ViewSourceCode), "GitHub", R.drawable.msg2_help, () -> Browser.openUrl(getParentActivity(), "https://github.com/Nekogram/Nekogram")));
+        searchResultList.add(new SearchResult(20002, LocaleController.getString(R.string.ViewSourceCode), "GitHub", R.drawable.msg2_help, () -> Browser.openUrl(getParentActivity(), "https://github.com/risin42/Nekogram")));
         searchResultList.add(new SearchResult(20003, LocaleController.getString(R.string.Translation), LocaleController.getString(R.string.TranslationAbout), R.drawable.msg2_help, () -> Browser.openUrl(getParentActivity(), "https://neko.crowdin.com/nekogram")));
-        searchResultList.add(new SearchResult(20004, LocaleController.getString(R.string.Donate), LocaleController.getString(R.string.DonateAbout), R.drawable.msg2_help, () -> presentFragment(new NekoDonateActivity())));
 
         return searchResultList;
     }

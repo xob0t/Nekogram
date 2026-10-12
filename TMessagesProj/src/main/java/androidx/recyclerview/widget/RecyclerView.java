@@ -5405,6 +5405,9 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
                         mGapWorker.postFromTraversal(RecyclerView.this, consumedX, consumedY);
                     }
                 }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                    setFrameContentVelocity(Math.abs(scroller.getCurrVelocity()));
+                }
             }
 
             isFlingerWorking = false;
@@ -11340,10 +11343,6 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
                 // a full update has been called.
                 return FULLUPDATE_PAYLOADS;
             }
-        }
-
-        public Object getPayload() {
-            return getUnmodifiedPayloads().isEmpty() ? null : getUnmodifiedPayloads().get(0);
         }
 
         void resetInternal() {

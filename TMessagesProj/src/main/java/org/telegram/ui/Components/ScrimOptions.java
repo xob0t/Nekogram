@@ -163,7 +163,7 @@ public class ScrimOptions extends Dialog {
         ViewCompat.setOnApplyWindowInsetsListener(windowView, new OnApplyWindowInsetsListener() {
             @Override
             public @NonNull WindowInsetsCompat onApplyWindowInsets(@NonNull View v, @NonNull WindowInsetsCompat insets) {
-                final Insets r = insets.getInsets(WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.systemBars());
+                final Insets r = AndroidUtilities.getDefaultWindowInsets(insets, false);
                 containerView.setPadding(r.left, r.top, r.right, r.bottom);
                 windowView.requestLayout();
 
@@ -319,9 +319,7 @@ public class ScrimOptions extends Dialog {
             | WindowManager.LayoutParams.FLAG_FULLSCREEN
             | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 
-        if (Build.VERSION.SDK_INT >= 28) {
-            params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-        }
+        AndroidUtilities.applyEdgeToEdgeLayoutParams(params);
         window.setAttributes(params);
 
         windowView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_VISIBLE);
@@ -358,7 +356,9 @@ public class ScrimOptions extends Dialog {
 
             final ColorMatrix colorMatrixOptions = new ColorMatrix();
             colorMatrixOptions.setSaturation(Theme.isCurrentThemeDark() ? 2 : 3);
-            AndroidUtilities.adjustBrightnessColorMatrix(colorMatrixOptions, Theme.isCurrentThemeDark() ? -.2f : -.07f);
+            if (!Theme.isCurrentThemeDark()) {
+                AndroidUtilities.adjustBrightnessColorMatrix(colorMatrixOptions, Theme.isCurrentThemeDark() ? -.2f : -.07f);
+            }
             final Bitmap bitmapOptions = AndroidUtilities.applyColorMatrix(bitmap, colorMatrixOptions);
             bitmapOptions.setHasAlpha(false);
 
@@ -426,13 +426,13 @@ public class ScrimOptions extends Dialog {
             boolean right = false;
             boolean bottom = false;
             if (!optionsAtCenter) {
-                if (boundsRight - optionsContainer.getMeasuredWidth() < dp(8)) {
+                if (boundsRight + dp(6) - optionsContainer.getMeasuredWidth() < dp(8)) {
                     optionsView.setPivotX(dp(6));
                     optionsContainer.setX(Math.min(containerView.getWidth() - optionsContainer.getWidth(), boundsLeft - dp(10)) - containerView.getX());
                 } else {
                     right = true;
                     optionsView.setPivotX(optionsView.getMeasuredWidth() - dp(6));
-                    optionsContainer.setX(Math.max(dp(8), boundsRight + dp(4) - optionsContainer.getMeasuredWidth()) - containerView.getX());
+                    optionsContainer.setX(Math.max(dp(8), boundsRight + dp(6) - optionsContainer.getMeasuredWidth()) - containerView.getX());
                 }
                 scrimDrawableTx1 = right ? optionsContainer.getX() + optionsContainer.getWidth() - dp(6) - boundsRight : optionsContainer.getX() + dp(10) - boundsLeft;
                 scrimDrawableTy1 = 0f;

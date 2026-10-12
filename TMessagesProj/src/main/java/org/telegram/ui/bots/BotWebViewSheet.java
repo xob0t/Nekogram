@@ -100,6 +100,7 @@ import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PaymentFormActivity;
 import org.telegram.ui.ProfileActivity;
+import org.telegram.ui.ReportBottomSheet;
 import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.web.BotWebViewContainer;
 
@@ -114,11 +115,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import tw.nekomimi.nekogram.helpers.EntitiesHelper;
-import tw.nekomimi.nekogram.helpers.WebAppHelper;
-
 public class BotWebViewSheet extends Dialog implements NotificationCenter.NotificationCenterDelegate, BottomSheetTabsOverlay.Sheet {
-    public final static int TYPE_WEB_VIEW_BUTTON = 0, TYPE_SIMPLE_WEB_VIEW_BUTTON = 1, TYPE_BOT_MENU_BUTTON = 2, TYPE_WEB_VIEW_BOT_APP = 3, TYPE_WEB_VIEW_BOT_MAIN = 4;
+    public final static int TYPE_WEB_VIEW_BUTTON = 0,
+            TYPE_SIMPLE_WEB_VIEW_BUTTON = 1,
+            TYPE_BOT_MENU_BUTTON = 2,
+            TYPE_WEB_VIEW_BOT_APP = 3,
+            TYPE_WEB_VIEW_BOT_MAIN = 4,
+            TYPE_WEB_VIEW_GUARD = 5;
 
     public final static int FLAG_FROM_INLINE_SWITCH = 1;
     public final static int FLAG_FROM_SIDE_MENU = 2;
@@ -197,8 +200,6 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
     private ChatAttachAlertBotWebViewLayout.WebProgressView progressView;
     private Theme.ResourcesProvider resourcesProvider;
     private boolean ignoreLayout;
-
-    private String textToCopy;
 
     private int currentAccount;
     private long botId;
@@ -309,6 +310,8 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
         tab.ready = webViewContainer != null && webViewContainer.isPageLoaded();
         tab.themeIsDark = Theme.isCurrentThemeDark();
         tab.lastUrl = webViewContainer != null ? webViewContainer.getUrlLoaded() : null;
+        tab.sameOrigin = webViewContainer != null && webViewContainer.isBridgeRestrictedToOrigin();
+        tab.trustedOrigin = webViewContainer != null ? webViewContainer.getTrustedOrigin() : null;
         tab.expanded = swipeContainer != null && swipeContainer.getSwipeOffsetY() < 0 || forceExpnaded || isFullSize() || fullscreen;
         tab.fullscreen = fullscreen;
         tab.fullscreenBlur = fullscreenBlur;
@@ -385,7 +388,7 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
         if (tab.webView != null) {
 //            tab.webView.resumeTimers();
             tab.webView.onResume();
-            webViewContainer.replaceWebView(currentAccount, tab.webView, tab.proxy);
+            webViewContainer.replaceWebView(currentAccount, tab.webView, tab.proxy, tab.trustedOrigin, tab.sameOrigin);
             webViewContainer.setState(tab.ready || tab.webView.isPageLoaded(), tab.lastUrl);
             if (Theme.isCurrentThemeDark() != tab.themeIsDark) {
                 webViewContainer.notifyThemeChanged();
@@ -530,11 +533,6 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
         webViewContainer.setOnVerifiedAge(onVerifiedAge);
         webViewContainer.setDelegate(new BotWebViewContainer.Delegate() {
             private boolean sentWebViewData;
-
-            @Override
-            public void onGetTextToCopy(String text) {
-                textToCopy = text;
-            }
 
             @Override
             public void onCloseRequested(Runnable callback) {
@@ -1362,10 +1360,9 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
         this.silent = props.silent;
         this.buttonText = props.buttonText;
         this.currentWebApp = props.app;
-        this.textToCopy = null;
 
         final TLRPC.User userbot = MessagesController.getInstance(currentAccount).getUser(botId);
-        CharSequence title = WebAppHelper.isInternalBot(props) ? WebAppHelper.getInternalBotName(props) : UserObject.getUserName(userbot);
+        CharSequence title = UserObject.getUserName(userbot);
         try {
             TextPaint tp = new TextPaint();
             tp.setTextSize(dp(20));
@@ -1643,6 +1640,24 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
                     }), ConnectionsManager.RequestFlagInvokeAfter | ConnectionsManager.RequestFlagFailOnServerErrors);
                     break;
                 }
+                case TYPE_WEB_VIEW_GUARD: {
+                    TLRPC.TL_messages_requestChatJoinWebView req = new TLRPC.TL_messages_requestChatJoinWebView();
+                    req.platform = "android";
+                    req.query_id = props.queryId;
+                    if (themeParams != null) {
+                        req.theme_params = new TLRPC.TL_dataJSON();
+                        req.theme_params.data = themeParams.toString();
+                    }
+
+                    ConnectionsManager.getInstance(currentAccount).sendRequestTyped(req, AndroidUtilities::runOnUIThread, (response2, error2) -> {
+                        if (error2 != null) {
+
+                        } else if (requestProps != null) {
+                            requestProps.applyResponse(response2);
+                            loadFromResponse();
+                        }
+                    }, ConnectionsManager.RequestFlagInvokeAfter | ConnectionsManager.RequestFlagFailOnServerErrors);
+                }
             }
         }
     }
@@ -1681,7 +1696,7 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
             o.addGap();
         }
         o
-            .addIf(onVerifiedAge == null && !WebAppHelper.isInternalBot(requestProps), R.drawable.msg_bot, LocaleController.getString(R.string.BotWebViewOpenBot), () -> {
+            .addIf(onVerifiedAge == null, R.drawable.msg_bot, LocaleController.getString(R.string.BotWebViewOpenBot), () -> {
                 if (parentActivity instanceof LaunchActivity) {
                     ((LaunchActivity) parentActivity).presentFragment(ChatActivity.of(botId));
                 }
@@ -1704,17 +1719,14 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
                 webViewContainer.loadFlickerAndSettingsItem(currentAccount, botId, null);
                 webViewContainer.reload();
             })
-            .addIf(WebAppHelper.isInternalBot(requestProps) && !TextUtils.isEmpty(textToCopy), R.drawable.msg_copy, LocaleController.getString(R.string.Copy), () -> {
-                if (textToCopy != null) {
-                    AndroidUtilities.addToClipboard(requestProps.internalType == WebAppHelper.INTERNAL_BOT_TLV ? EntitiesHelper.warpInLanguageSpan(textToCopy, "json") : textToCopy);
-                    showBulletin(bulletinFactory -> bulletinFactory.createCopyBulletin(LocaleController.getString(R.string.TextCopied)));
-                }
-            })
-            .addIf(onVerifiedAge == null && !WebAppHelper.isInternalBot(requestProps) && userbot != null && userbot.bot_has_main_app, R.drawable.msg_home, LocaleController.getString(R.string.AddShortcut), () -> {
+            .addIf(onVerifiedAge == null && userbot != null && userbot.bot_has_main_app, R.drawable.msg_home, LocaleController.getString(R.string.AddShortcut), () -> {
                 MediaDataController.getInstance(currentAccount).installShortcut(botId, MediaDataController.SHORTCUT_TYPE_ATTACHED_BOT);
             })
-            .addIf(onVerifiedAge == null && !WebAppHelper.isInternalBot(requestProps), R.drawable.menu_intro, LocaleController.getString(R.string.BotWebViewToS), () -> {
+            .addIf(onVerifiedAge == null, R.drawable.menu_intro, LocaleController.getString(R.string.BotWebViewToS), () -> {
                 Browser.openUrl(getContext(), LocaleController.getString(R.string.BotWebViewToSLink));
+            })
+            .addIf(onVerifiedAge == null, R.drawable.msg_report, LocaleController.getString(R.string.BotWebViewReportBot), () -> {
+                ReportBottomSheet.openChat(currentAccount, getContext(), BulletinFactory.of(Bulletin.BulletinWindow.make(getContext()), resourcesProvider), botId);
             })
             .addIf(onVerifiedAge == null && currentBot != null && (currentBot.show_in_side_menu || currentBot.show_in_attach_menu), R.drawable.msg_delete, LocaleController.getString(R.string.BotWebViewDeleteBot), () -> {
                 deleteBot(currentAccount, botId, () -> dismiss());
@@ -1853,12 +1865,14 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
     private void loadFromResponse() {
         if (requestProps == null) return;
         final long pollTimeout = Math.max(0, POLL_PERIOD - (System.currentTimeMillis() - requestProps.responseTime));
+        boolean sameOrigin = false;
         String url = null;
         fullsize = null;
         if (requestProps.response instanceof TLRPC.TL_webViewResultUrl) {
             TLRPC.TL_webViewResultUrl resultUrl = (TLRPC.TL_webViewResultUrl) requestProps.response;
             queryId = resultUrl.query_id;
             url = resultUrl.url;
+            sameOrigin = resultUrl.same_origin;
             fullsize = resultUrl.fullsize;
             if (!fromTab) {
                 setFullscreen(resultUrl.fullscreen, !fromTab);
@@ -1874,7 +1888,7 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
         }
         if (url != null && !fromTab) {
             MediaDataController.getInstance(currentAccount).increaseWebappRating(requestProps.botId);
-            webViewContainer.loadUrl(currentAccount, url);
+            webViewContainer.loadUrl(currentAccount, url, sameOrigin);
         }
         AndroidUtilities.runOnUIThread(pollRunnable, pollTimeout);
         if (swipeContainer != null) {

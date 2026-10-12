@@ -66,7 +66,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import tw.nekomimi.nekogram.helpers.WebAppHelper;
 
 public class BottomSheetTabs extends FrameLayout {
 
@@ -580,7 +579,7 @@ public class BottomSheetTabs extends FrameLayout {
         }
 
         backgroundPaint.setColor(backgroundColorAnimated.set(backgroundColor));
-        canvas.drawRect(0, 0, getWidth(), getHeight(), backgroundPaint);
+        // canvas.drawRect(0, 0, getWidth(), getHeight(), backgroundPaint);
         super.dispatchDraw(canvas);
 
         final int tabColor = tabColorAnimated.set(this.tabColor);
@@ -600,6 +599,10 @@ public class BottomSheetTabs extends FrameLayout {
                 drawable.draw(canvas, rect, dp(18), alpha, 1f);
             }
         }
+    }
+
+    public Paint getBackgroundPaint() {
+        return backgroundPaint;
     }
 
     public void setupTab(TabDrawable drawable) {
@@ -938,6 +941,8 @@ public class BottomSheetTabs extends FrameLayout {
         public BotWebViewContainer.MyWebView webView;
         public View view2;
         public Object proxy;
+        public boolean sameOrigin;
+        public String trustedOrigin;
         public int viewWidth, viewHeight;
         public int viewScroll;
         public boolean expanded;
@@ -1017,9 +1022,6 @@ public class BottomSheetTabs extends FrameLayout {
                 return title;
             }
             if (props == null) return "";
-            if (WebAppHelper.isInternalBot(props)) {
-                return WebAppHelper.getInternalBotName(props);
-            }
             TLRPC.User user = MessagesController.getInstance(props.currentAccount).getUser(props.botId);
             return UserObject.getUserName(user);
         }

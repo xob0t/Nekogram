@@ -12,10 +12,10 @@ import org.telegram.tgnet.TLRPC;
 
 public class WebViewRequestProps {
 
-    public int internalType;
     public int currentAccount;
     public long peerId;
     public long botId;
+    public long queryId;
     public String buttonText;
     public String buttonUrl;
     public @BotWebViewAttachedSheet.WebViewType int type;

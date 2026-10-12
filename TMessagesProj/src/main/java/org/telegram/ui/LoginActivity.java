@@ -150,6 +150,7 @@ import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.ActionBar.INavigationLayout;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.CheckBoxCell;
@@ -219,6 +220,7 @@ import tw.nekomimi.nekogram.EditTextAutoFill;
 import tw.nekomimi.nekogram.QrView;
 import tw.nekomimi.nekogram.helpers.PasscodeHelper;
 import tw.nekomimi.nekogram.helpers.PopupHelper;
+import tw.nekomimi.nekogram.passkey.LoginQrScanner;
 
 @SuppressLint("HardwareIds")
 public class LoginActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
@@ -761,11 +763,42 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         moreButtonView.setIcon(R.drawable.ic_ab_other);
         moreButtonView.addSubItem(0, R.drawable.outline_shield_plain_24, getString(R.string.ProxySettings));
         moreButtonView.addSubItem(1, R.drawable.msg_qrcode, getString(R.string.QRLoginTitle));
+        moreButtonView.addSubItem(2, R.drawable.profile_qr_scan_24, getString(R.string.ScanQrCode));
         moreButtonView.setDelegate(id -> {
             if (id == 0) {
                 presentFragment(new ProxyListActivity());
             } else if (id == 1) {
                 setPage(VIEW_QR_LOGIN, true, null, false);
+            } else if (id == 2) {
+                LoginQrScanner.showScanner(this, (authorization, err) -> {
+                    if ("CANCELLED".equals(err)) return;
+                    if (authorization instanceof TLRPC.TL_auth_authorization auth) {
+                        onAuthSuccess(auth);
+                        return;
+                    }
+                    if (err != null && err.contains("SESSION_PASSWORD_NEEDED")) {
+                        var req = new TL_account.getPassword();
+                        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+                            showDoneButton(false, true);
+                            if (error == null) {
+                                var password = (TL_account.Password) response;
+                                if (!TwoStepVerificationActivity.canHandleCurrentPassword(password, true)) {
+                                    AlertsCreator.showUpdateAppAlert(getParentActivity(), getString(R.string.UpdateAppAlert), true);
+                                    return;
+                                }
+                                var bundle = new Bundle();
+                                var data = new SerializedData(password.getObjectSize());
+                                password.serializeToStream(data);
+                                bundle.putString("password", Utilities.bytesToHex(data.toByteArray()));
+                                setPage(VIEW_PASSWORD, true, bundle, false);
+                            } else {
+                                needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), error.text);
+                            }
+                        }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin);
+                    } else {
+                        BulletinFactory.of(slideViewsContainer, null).showForError(err);
+                    }
+                });
             }
         });
         moreButtonView.setSubMenuOpenSide(1);
@@ -1626,7 +1659,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
     private void needFinishActivity(boolean afterSignup, boolean showSetPasswordConfirm, int otherwiseRelogin) {
         if (getParentActivity() != null) {
-            AndroidUtilities.setLightStatusBar(getParentActivity().getWindow(), false);
+            AndroidUtilities.setLightStatusBar(getParentActivity(), false);
         }
         clearCurrentState();
         if (getParentActivity() instanceof LaunchActivity) {
@@ -3785,7 +3818,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 innerLinearLayout.addView(frameLayout, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL));
 
                 blueImageView = new RLottieImageView(context);
-                hintDrawable = new RLottieDrawable(R.raw.phone_flash_call, String.valueOf(R.raw.phone_flash_call), AndroidUtilities.dp(64), AndroidUtilities.dp(64), true, null);
+                hintDrawable = new RLottieDrawable(R.raw.phone_flash_call, AndroidUtilities.dp(64), AndroidUtilities.dp(64), true, null);
                 blueImageView.setAnimation(hintDrawable);
                 frameLayout.addView(blueImageView, LayoutHelper.createFrame(64, 64));
 
@@ -3800,13 +3833,13 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
                 int size = currentType == AUTH_TYPE_MESSAGE ? 128 : 64;
                 if (currentType == AUTH_TYPE_MESSAGE) {
-                    hintDrawable = new RLottieDrawable(R.raw.code_laptop, String.valueOf(R.raw.code_laptop), AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
+                    hintDrawable = new RLottieDrawable(R.raw.code_laptop, AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
                 } else {
-                    hintDrawable = new RLottieDrawable(R.raw.sms_incoming_info, String.valueOf(R.raw.sms_incoming_info), AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
+                    hintDrawable = new RLottieDrawable(R.raw.sms_incoming_info, AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
 
-                    starsToDotsDrawable = new RLottieDrawable(R.raw.phone_stars_to_dots, String.valueOf(R.raw.phone_stars_to_dots), AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
-                    dotsDrawable = new RLottieDrawable(R.raw.phone_dots, String.valueOf(R.raw.phone_dots), AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
-                    dotsToStarsDrawable = new RLottieDrawable(R.raw.phone_dots_to_stars, String.valueOf(R.raw.phone_dots_to_stars), AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
+                    starsToDotsDrawable = new RLottieDrawable(R.raw.phone_stars_to_dots, AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
+                    dotsDrawable = new RLottieDrawable(R.raw.phone_dots, AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
+                    dotsToStarsDrawable = new RLottieDrawable(R.raw.phone_dots_to_stars, AndroidUtilities.dp(size), AndroidUtilities.dp(size), true, null);
                 }
                 blueImageView = new RLottieImageView(context);
                 blueImageView.setAnimation(hintDrawable);
@@ -4203,9 +4236,9 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
         private void applyLottieColors(RLottieDrawable drawable) {
             if (drawable != null) {
-                drawable.setLayerColor("Bubble.**", Theme.getColor(Theme.key_chats_actionBackground));
-                drawable.setLayerColor("Phone.**", Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
-                drawable.setLayerColor("Note.**", Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+                drawable.setLayerColor("Bubble", Theme.getColor(Theme.key_chats_actionBackground));
+                drawable.setLayerColor("Phone", Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+                drawable.setLayerColor("Note", Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
             }
         }
 
@@ -7935,8 +7968,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 avatarEditor.playAnimation();
             });
 
-            cameraDrawable = new RLottieDrawable(R.raw.camera, String.valueOf(R.raw.camera), AndroidUtilities.dp(70), AndroidUtilities.dp(70), false, null);
-            cameraWaitDrawable = new RLottieDrawable(R.raw.camera_wait, String.valueOf(R.raw.camera_wait), AndroidUtilities.dp(70), AndroidUtilities.dp(70), false, null);
+            cameraDrawable = new RLottieDrawable(R.raw.camera, AndroidUtilities.dp(70), AndroidUtilities.dp(70), false, null);
+            cameraWaitDrawable = new RLottieDrawable(R.raw.camera_wait, AndroidUtilities.dp(70), AndroidUtilities.dp(70), false, null);
 
             avatarEditor = new RLottieImageView(context) {
                 @Override
@@ -10098,7 +10131,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
             addView(new Space(context), LayoutHelper.createLinear(0, 0, 1, Gravity.FILL));
 
-            button = new ButtonWithCounterView(context, null);
+            button = new ButtonWithCounterView(context, null).setRound();
             button.setLoading(true);
             addView(button, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, Gravity.FILL_HORIZONTAL, 0, 16, 0, 16));
         }
@@ -10299,7 +10332,11 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                                 final PaymentFormActivity fragment = new PaymentFormActivity(form, invoice, true, LoginActivity.this);
                                 fragment.setCustomResultReceiver(result -> {
                                     AndroidUtilities.runOnUIThread(() -> {
-                                        fragment.finishFragment();
+                                        startPoll(purpose.phone_number, purpose.phone_code_hash, form.form_id);
+                                    });
+                                });
+                                fragment.setCustomAnyResultReceiver(result -> {
+                                    AndroidUtilities.runOnUIThread(() -> {
                                         startPoll(purpose.phone_number, purpose.phone_code_hash, form.form_id);
                                     });
                                 });
@@ -10483,6 +10520,23 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             }
         }
 
+        private void closeAllPaymentFormActivities() {
+            final INavigationLayout parentLayout = getParentLayout();
+            if (parentLayout == null || parentLayout.getFragmentStack() == null) {
+                return;
+            }
+            final List<BaseFragment> stack = parentLayout.getFragmentStack();
+            final BaseFragment topFragment = stack.isEmpty() ? null : stack.get(stack.size() - 1);
+            for (BaseFragment fragment : new ArrayList<>(stack)) {
+                if (fragment instanceof PaymentFormActivity && fragment != topFragment) {
+                    fragment.removeSelfFromStack();
+                }
+            }
+            if (topFragment instanceof PaymentFormActivity) {
+                parentLayout.closeLastFragment(true);
+            }
+        }
+
         private boolean polling;
         private String pollingPhoneNumber;
         private String pollingPhoneCodeHash;
@@ -10515,6 +10569,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 if (res instanceof TLRPC.auth_SentCode) {
                     polling = false;
                     button.setLoading(false);
+                    closeAllPaymentFormActivities();
                     fillNextCodeParams(params, (TLRPC.auth_SentCode) res);
                 } else if (err != null) {
                     if (err.text != null && err.text.startsWith("FLOOD_WAIT_")) {

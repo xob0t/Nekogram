@@ -19,13 +19,13 @@ import java.util.ArrayList;
 
 import tw.nekomimi.nekogram.NekoConfig;
 import tw.nekomimi.nekogram.helpers.EmojiHelper;
-import tw.nekomimi.nekogram.helpers.PopupHelper;
 
-public class NekoAppearanceSettingsActivity extends BaseNekoSettingsActivity implements NotificationCenter.NotificationCenterDelegate {
+public class NekoAppearanceSettingsActivity extends BaseNekoSettingsActivity {
 
     private final int emojiSetsRow = rowId++;
     private final int predictiveBackAnimationRow = rowId++;
     private final int appBarShadowRow = rowId++;
+    private final int gooeyAvatarAnimationRow = rowId++;
     private final int formatTimeWithSecondsRow = rowId++;
     private final int disableNumberRoundingRow = rowId++;
     private final int hideBottomNavigationBarRow = rowId++;
@@ -33,6 +33,7 @@ public class NekoAppearanceSettingsActivity extends BaseNekoSettingsActivity imp
 
     private final int hideStoriesRow = rowId++;
     private final int mediaPreviewRow = rowId++;
+    private final int miniSenderAvatarRow = rowId++;
 
     private final int hideAllTabRow = rowId++;
     private final int tabsTitleTypeRow = rowId++;
@@ -41,29 +42,11 @@ public class NekoAppearanceSettingsActivity extends BaseNekoSettingsActivity imp
     private final int strokeOnViewsRow = rowId++;
 
     @Override
-    public boolean onFragmentCreate() {
-        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
-        return super.onFragmentCreate();
-    }
-
-    @Override
-    public void onFragmentDestroy() {
-        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
-        super.onFragmentDestroy();
-    }
-
-    @Override
-    public void didReceivedNotification(int id, int account, Object... args) {
-        if (id == NotificationCenter.emojiLoaded && listView != null) {
-            notifyItemChanged(emojiSetsRow, PARTIAL);
-        }
-    }
-
-    @Override
     protected void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
         items.add(UItem.asHeader(LocaleController.getString(R.string.ChangeChannelNameColor2)));
         items.add(EmojiSetCellFactory.of(emojiSetsRow, LocaleController.getString(R.string.EmojiSets)).slug("emojiSets"));
         items.add(UItem.asCheck(predictiveBackAnimationRow, LocaleController.getString(R.string.PredictiveBackAnimation)).slug("predictiveBackAnimation").setChecked(NekoConfig.predictiveBackAnimation));
+        items.add(UItem.asCheck(gooeyAvatarAnimationRow, LocaleController.getString(R.string.GooeyAvatarAnimation)).slug("gooeyAvatarAnimation").setChecked(NekoConfig.gooeyAvatarAnimation));
         items.add(UItem.asCheck(appBarShadowRow, LocaleController.getString(R.string.DisableAppBarShadow)).slug("appBarShadow").setChecked(NekoConfig.disableAppBarShadow));
         items.add(UItem.asCheck(formatTimeWithSecondsRow, LocaleController.getString(R.string.FormatWithSeconds)).slug("formatTimeWithSeconds").setChecked(NekoConfig.formatTimeWithSeconds));
         items.add(UItem.asCheck(disableNumberRoundingRow, LocaleController.getString(R.string.DisableNumberRounding), "4.8K -> 4777").slug("disableNumberRounding").setChecked(NekoConfig.disableNumberRounding));
@@ -78,6 +61,7 @@ public class NekoAppearanceSettingsActivity extends BaseNekoSettingsActivity imp
         items.add(UItem.asHeader(LocaleController.getString(R.string.SavedDialogsTab)));
         items.add(UItem.asCheck(hideStoriesRow, LocaleController.getString(R.string.HideStories)).slug("hideStories").setChecked(NekoConfig.hideStories));
         items.add(UItem.asCheck(mediaPreviewRow, LocaleController.getString(R.string.MediaPreview)).slug("mediaPreview").setChecked(NekoConfig.mediaPreview));
+        items.add(UItem.asCheck(miniSenderAvatarRow, LocaleController.getString(R.string.MiniSenderAvatar)).slug("miniSenderAvatar").setChecked(NekoConfig.miniSenderAvatar));
         items.add(UItem.asShadow(null));
 
         items.add(UItem.asHeader(LocaleController.getString(R.string.Filters)));
@@ -110,15 +94,14 @@ public class NekoAppearanceSettingsActivity extends BaseNekoSettingsActivity imp
             types.add(NekoConfig.TABLET_ENABLE);
             arrayList.add(LocaleController.getString(R.string.Disable));
             types.add(NekoConfig.TABLET_DISABLE);
-            PopupHelper.show(arrayList, LocaleController.getString(R.string.TabletMode), types.indexOf(NekoConfig.tabletMode), getParentActivity(), view, i -> {
+            showPopup(arrayList, types.indexOf(NekoConfig.tabletMode), item, view, i -> {
                 NekoConfig.setTabletMode(types.get(i));
-                item.textValue = arrayList.get(i);
                 listView.adapter.notifyItemChanged(position, PARTIAL);
                 AndroidUtilities.resetTabletFlag();
                 if (getParentActivity() instanceof LaunchActivity) {
                     ((LaunchActivity) getParentActivity()).invalidateTabletMode();
                 }
-            }, resourcesProvider);
+            });
         } else if (id == emojiSetsRow) {
             presentFragment(new NekoEmojiSettingsActivity());
         } else if (id == disableNumberRoundingRow) {
@@ -166,12 +149,11 @@ public class NekoAppearanceSettingsActivity extends BaseNekoSettingsActivity imp
             types.add(NekoConfig.TITLE_TYPE_ICON);
             arrayList.add(LocaleController.getString(R.string.TabTitleTypeMix));
             types.add(NekoConfig.TITLE_TYPE_MIX);
-            PopupHelper.show(arrayList, LocaleController.getString(R.string.TabTitleType), types.indexOf(NekoConfig.tabsTitleType), getParentActivity(), view, i -> {
+            showPopup(arrayList, types.indexOf(NekoConfig.tabsTitleType), item, view, i -> {
                 NekoConfig.setTabsTitleType(types.get(i));
-                item.textValue = arrayList.get(i);
                 listView.adapter.notifyItemChanged(position, PARTIAL);
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogFiltersUpdated);
-            }, resourcesProvider);
+            });
         } else if (id == predictiveBackAnimationRow) {
             NekoConfig.togglePredictiveBackAnimation();
             if (view instanceof TextCheckCell) {
@@ -188,16 +170,25 @@ public class NekoAppearanceSettingsActivity extends BaseNekoSettingsActivity imp
             ArrayList<String> arrayList = new ArrayList<>();
             arrayList.add(LocaleController.getString(R.string.TabsPositionTop));
             arrayList.add(LocaleController.getString(R.string.TabsPositionBottom));
-            PopupHelper.show(arrayList, LocaleController.getString(R.string.TabsPosition), NekoConfig.bottomFilterTabs ? 1 : 0, getParentActivity(), view, i -> {
+            showPopup(arrayList, NekoConfig.bottomFilterTabs ? 1 : 0, item, view, i -> {
                 NekoConfig.setBottomFilterTabs(i == 1);
-                item.textValue = arrayList.get(i);
                 listView.adapter.notifyItemChanged(position, PARTIAL);
                 parentLayout.rebuildAllFragmentViews(false, false);
-            }, resourcesProvider);
+            });
         } else if (id == strokeOnViewsRow) {
             NekoConfig.toggleStrokeOnViews();
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(NekoConfig.strokeOnViews);
+            }
+        } else if (id == gooeyAvatarAnimationRow) {
+            NekoConfig.toggleGooeyAvatarAnimation();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.gooeyAvatarAnimation);
+            }
+        } else if (id == miniSenderAvatarRow) {
+            NekoConfig.toggleMiniSenderAvatar();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.miniSenderAvatar);
             }
         }
     }
@@ -210,6 +201,13 @@ public class NekoAppearanceSettingsActivity extends BaseNekoSettingsActivity imp
     @Override
     protected String getKey() {
         return "a";
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (listView == null) return;
+        notifyItemChanged(emojiSetsRow);
     }
 
     private static class EmojiSetCellFactory extends UItem.UItemFactory<EmojiSetCell> {

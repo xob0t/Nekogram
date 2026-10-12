@@ -1,6 +1,7 @@
 package org.telegram.ui.Components;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
+import static org.telegram.messenger.AndroidUtilities.replaceSingleTag;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -35,7 +36,7 @@ import android.widget.LinearLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
-import androidx.recyclerview.widget.ChatListItemAnimator;
+import org.telegram.ui.recyclerview.ChatListItemAnimator;
 import androidx.recyclerview.widget.GridLayoutManagerFixed;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -52,6 +53,7 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBarMenuSubItem;
@@ -61,8 +63,10 @@ import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Cells.IMessageCell;
 import org.telegram.ui.Cells.TextSelectionHelper;
 import org.telegram.ui.ChatActivity;
+import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.drawable.color.impl.BlurredBackgroundProviderImpl;
+import org.telegram.ui.PremiumPreviewFragment;
 
 import java.util.ArrayList;
 
@@ -111,6 +115,7 @@ public class MessagePreviewView extends FrameLayout {
         ActionBarMenuSubItem quoteButton, clearQuoteButton;
         ActionBarMenuSubItem replyAnotherChatButton, quoteAnotherChatButton;
         ActionBarMenuSubItem deleteReplyButton;
+        ActionBarMenuSubItem sendMediaButton;
         ToggleButton changePositionBtn;
         FrameLayout changeSizeBtnContainer;
         ToggleButton changeSizeBtn;
@@ -1000,13 +1005,16 @@ public class MessagePreviewView extends FrameLayout {
 
             } else if (tab == TAB_FORWARD && messagePreviewParams.forwardMessages != null) {
 
-                boolean canHideSenderName = true;
-                for (int i = 0; i < messagePreviewParams.forwardMessages.messages.size(); ++i) {
-                    if (messagePreviewParams.forwardMessages.messages.get(i).type == MessageObject.TYPE_ARTICLE) {
-                        canHideSenderName = false;
-                        break;
+                boolean _canHideSenderName = true;
+                if (!UserConfig.getInstance(currentAccount).isPremium()) {
+                    for (int i = 0; i < messagePreviewParams.forwardMessages.messages.size(); ++i) {
+                        if (messagePreviewParams.forwardMessages.messages.get(i).type == MessageObject.TYPE_ARTICLE) {
+                            _canHideSenderName = false;
+                            break;
+                        }
                     }
                 }
+                final boolean canHideSenderName = _canHideSenderName;
 
                 ToggleButton sendersNameButton = new ToggleButton(
                     context,
@@ -1014,9 +1022,7 @@ public class MessagePreviewView extends FrameLayout {
                     R.raw.name_show, messagePreviewParams.multipleUsers ? LocaleController.getString(R.string.HideSenderNames) : LocaleController.getString(R.string.HideSendersName),
                     resourcesProvider
                 );
-                if (canHideSenderName) {
-                    menu.addView(sendersNameButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
-                }
+                menu.addView(sendersNameButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
 
                 final ToggleButton captionButton;
                 if (messagePreviewParams.hasCaption) {
@@ -1061,6 +1067,18 @@ public class MessagePreviewView extends FrameLayout {
 
                 sendersNameButton.setState(messagePreviewParams.hideForwardSendersName, false);
                 sendersNameButton.setOnClickListener(view -> {
+                    if (!canHideSenderName) {
+                        BulletinFactory.of(MessagePreviewView.this, resourcesProvider)
+                            .createSimpleBulletin(R.raw.star_premium_2, replaceSingleTag("Subscribe to **Telegram Premium** to forward formatted messages without the sender’s name.", () -> {
+                                dismiss(false);
+                                AndroidUtilities.runOnUIThread(() -> {
+                                    if (!AndroidUtilities.isContextSafe(context)) return;
+                                    new PremiumFeatureBottomSheet(context, PremiumPreviewFragment.PREMIUM_FEATURE_RICH_EDITOR, true, resourcesProvider).show();
+                                });
+                            }))
+                            .show();
+                        return;
+                    }
                     messagePreviewParams.hideForwardSendersName = !messagePreviewParams.hideForwardSendersName;
                     returnSendersNames = false;
                     if (!messagePreviewParams.hideForwardSendersName) {
@@ -1142,11 +1160,11 @@ public class MessagePreviewView extends FrameLayout {
                 applyChanges.setOnClickListener(v -> dismiss(true));
                 menu.addView(applyChanges, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
 
-                ActionBarMenuSubItem sendMessagesView = new ActionBarMenuSubItem(context, false, false, resourcesProvider);
-                sendMessagesView.setTextAndIcon(LocaleController.getString(messagePreviewParams.webpage.document != null ? messagePreviewParams.isVideo ? R.string.PreviewSendVideo : R.string.PreviewSendFile : R.string.PreviewSendPhoto), R.drawable.msg_send);
-                sendMessagesView.setVisibility(messagePreviewParams.webpage.document != null || messagePreviewParams.webpage.photo != null ? View.VISIBLE : View.GONE);
-                menu.addView(sendMessagesView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
-                sendMessagesView.setOnClickListener(v -> {
+                sendMediaButton = new ActionBarMenuSubItem(context, false, false, resourcesProvider);
+                sendMediaButton.setTextAndIcon(LocaleController.getString(messagePreviewParams.webpage.document != null ? messagePreviewParams.isVideo ? R.string.PreviewSendVideo : R.string.PreviewSendFile : R.string.PreviewSendPhoto), R.drawable.msg_send);
+                sendMediaButton.setVisibility(messagePreviewParams.webpage.document != null || messagePreviewParams.webpage.photo != null ? View.VISIBLE : View.GONE);
+                menu.addView(sendMediaButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
+                sendMediaButton.setOnClickListener(v -> {
                     if (chatActivity.isInScheduleMode()) {
                         AlertsCreator.createScheduleDatePickerDialog(
                                 chatActivity.getParentActivity(),
@@ -2297,6 +2315,12 @@ public class MessagePreviewView extends FrameLayout {
                 page.changeSizeBtn.setState(messagePreviewParams.webpageSmall, true);
                 page.videoChangeSizeBtn.setState(messagePreviewParams.webpageSmall, true);
                 page.changePositionBtn.setState(!messagePreviewParams.webpageTop, true);
+                if (messagePreviewParams.webpage == null) {
+                    page.sendMediaButton.setVisibility(View.GONE);
+                } else {
+                    page.sendMediaButton.setTextAndIcon(LocaleController.getString(messagePreviewParams.webpage.document != null ? messagePreviewParams.isVideo ? R.string.PreviewSendVideo : R.string.PreviewSendFile : R.string.PreviewSendPhoto), R.drawable.msg_send);
+                    page.sendMediaButton.setVisibility(messagePreviewParams.webpage.document != null || messagePreviewParams.webpage.photo != null ? View.VISIBLE : View.GONE);
+                }
                 page.updateMessages();
             }
         }
@@ -2476,13 +2500,13 @@ public class MessagePreviewView extends FrameLayout {
 
         // R.raw.media_shrink, R.raw.media_enlarge
         public RLottieToggleDrawable(View view, int state1Res, int state2Res) {
-            state1 = new RLottieDrawable(state1Res, "" + state1Res, dp(24), dp(24));
+            state1 = new RLottieDrawable(state1Res, dp(24), dp(24));
             state1.setMasterParent(view);
             state1.setAllowDecodeSingleFrame(true);
             state1.setPlayInDirectionOfCustomEndFrame(true);
             state1.setAutoRepeat(0);
 
-            state2 = new RLottieDrawable(state2Res, "" + state2Res, dp(24), dp(24));
+            state2 = new RLottieDrawable(state2Res, dp(24), dp(24));
             state2.setMasterParent(view);
             state2.setAllowDecodeSingleFrame(true);
             state2.setPlayInDirectionOfCustomEndFrame(true);

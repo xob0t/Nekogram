@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1030369107440",
+    "project_id": "nekogram-6eb0d",
+    "storage_bucket": "nekogram-6eb0d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1030369107440:android:488e7b17fc8907ed5a5135",
+        "android_client_info": {
+          "package_name": "tw.nekomimi.nekogram"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVNzE_q16VP1ac-CaWsKOCg9R7sXxOXEI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1030369107440:android:655ac1f57b6784505a5135",
+        "android_client_info": {
+          "package_name": "tw.nekomimi.nekogram.beta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVNzE_q16VP1ac-CaWsKOCg9R7sXxOXEI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

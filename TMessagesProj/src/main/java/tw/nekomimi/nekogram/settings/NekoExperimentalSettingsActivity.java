@@ -28,14 +28,12 @@ import java.util.Locale;
 
 import tw.nekomimi.nekogram.Extra;
 import tw.nekomimi.nekogram.NekoConfig;
-import tw.nekomimi.nekogram.helpers.AnalyticsHelper;
-import tw.nekomimi.nekogram.helpers.PopupHelper;
-import tw.nekomimi.nekogram.helpers.SettingsHelper;
 import tw.nekomimi.nekogram.helpers.remote.UpdateHelper;
 
 public class NekoExperimentalSettingsActivity extends BaseNekoSettingsActivity {
 
     private final int downloadSpeedBoostRow = rowId++;
+    private final int localCustomEmojiRow = rowId++;
     private final int keepFormattingRow = rowId++;
     private final int autoInlineBotRow = rowId++;
     private final int forceFontWeightFallbackRow = rowId++;
@@ -44,10 +42,6 @@ public class NekoExperimentalSettingsActivity extends BaseNekoSettingsActivity {
     private final int showRPCErrorRow = rowId++;
 
     private final int checkUpdateRow = rowId++;
-
-    private final int sendBugReportRow = rowId++;
-    private final int deleteDataRow = rowId++;
-    private final int copyReportIdRow = rowId++;
 
     private final int deleteAccountRow = rowId++;
 
@@ -63,6 +57,7 @@ public class NekoExperimentalSettingsActivity extends BaseNekoSettingsActivity {
                 default -> LocaleController.getString(R.string.DownloadSpeedBoostAverage);
             }).slug("downloadSpeedBoost"));
         }
+        items.add(UItem.asCheck(localCustomEmojiRow, LocaleController.getString(R.string.LocalCustomEmoji)).slug("localCustomEmoji").setChecked(NekoConfig.localCustomEmoji));
         items.add(UItem.asCheck(keepFormattingRow, LocaleController.getString(R.string.TranslationKeepFormatting)).slug("keepFormatting").setChecked(NekoConfig.keepFormatting));
         items.add(UItem.asCheck(autoInlineBotRow, LocaleController.getString(R.string.AutoInlineBot), LocaleController.getString(R.string.AutoInlineBotDesc)).slug("autoInlineBot").setChecked(NekoConfig.autoInlineBot));
         items.add(UItem.asCheck(forceFontWeightFallbackRow, LocaleController.getString(R.string.ForceFontWeightFallback)).slug("forceFontWeightFallback").setChecked(NekoConfig.forceFontWeightFallback));
@@ -73,18 +68,10 @@ public class NekoExperimentalSettingsActivity extends BaseNekoSettingsActivity {
         items.add(UItem.asCheck(showRPCErrorRow, LocaleController.getString(R.string.ShowRPCError), LocaleController.formatString(R.string.ShowRPCErrorException, "FILE_REFERENCE_EXPIRED")).slug("showRPCError").setChecked(NekoConfig.showRPCError));
         items.add(UItem.asShadow(null));
 
-        if (getParentActivity() instanceof LaunchActivity) {
+        if (getParentActivity() instanceof LaunchActivity && Extra.getHelperBot() != null) {
             items.add(TextDetailSettingsCellFactory.of(checkUpdateRow, LocaleController.getString(R.string.CheckUpdate), UpdateHelper.formatDateUpdate(SharedConfig.lastUpdateCheckTime)).slug("checkUpdate"));
             items.add(UItem.asShadow(null));
         }
-
-        if (AnalyticsHelper.isSettingsAvailable()) {
-            items.add(UItem.asHeader(LocaleController.getString(R.string.SendAnonymousData)));
-            items.add(UItem.asCheck(sendBugReportRow, LocaleController.getString(R.string.SendBugReport), LocaleController.getString(R.string.SendBugReportDesc)).slug("sendBugReport").setChecked(!AnalyticsHelper.analyticsDisabled && AnalyticsHelper.sendBugReport).setEnabled(!AnalyticsHelper.analyticsDisabled));
-            items.add(TextDetailSettingsCellFactory.of(deleteDataRow, LocaleController.getString(R.string.AnonymousDataDelete), LocaleController.getString(R.string.AnonymousDataDeleteDesc)).slug("deleteData"));
-        }
-        items.add(TextDetailSettingsCellFactory.of(copyReportIdRow, LocaleController.getString(R.string.CopyReportId), LocaleController.getString(R.string.CopyReportIdDescription)).slug("copyReportId"));
-        items.add(UItem.asShadow(!AnalyticsHelper.isSettingsAvailable() ? null : LocaleController.formatString(R.string.SendAnonymousDataDesc, "Sentry", "Functional Software")));
 
         items.add(TextSettingsCellFactory.of(deleteAccountRow, LocaleController.getString(R.string.DeleteAccount), "").slug("deleteAccount").red());
         items.add(UItem.asShadow(null));
@@ -199,47 +186,15 @@ public class NekoExperimentalSettingsActivity extends BaseNekoSettingsActivity {
             types.add(NekoConfig.BOOST_AVERAGE);
             arrayList.add(LocaleController.getString(R.string.DownloadSpeedBoostExtreme));
             types.add(NekoConfig.BOOST_EXTREME);
-            PopupHelper.show(arrayList, LocaleController.getString(R.string.DownloadSpeedBoost), types.indexOf(NekoConfig.downloadSpeedBoost), getParentActivity(), view, i -> {
+            showPopup(arrayList, types.indexOf(NekoConfig.downloadSpeedBoost), item, view, i -> {
                 NekoConfig.setDownloadSpeedBoost(types.get(i));
-                item.textValue = arrayList.get(i);
                 listView.adapter.notifyItemChanged(position, PARTIAL);
-            }, resourcesProvider);
-        } else if (id == sendBugReportRow) {
-            if (AnalyticsHelper.analyticsDisabled) {
-                return;
-            }
-            AnalyticsHelper.toggleSendBugReport();
-            if (view instanceof TextCheckCell) {
-                ((TextCheckCell) view).setChecked(AnalyticsHelper.sendBugReport);
-            }
-            var copyItem = listView.findItemByItemId(copyReportIdRow);
-            copyItem.setEnabled(AnalyticsHelper.sendBugReport);
-            notifyItemChanged(copyReportIdRow);
-        } else if (id == deleteDataRow) {
-            if (AnalyticsHelper.analyticsDisabled) {
-                return;
-            }
-            AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity(), resourcesProvider);
-            builder.setTitle(LocaleController.getString(R.string.AnonymousDataDelete));
-            builder.setMessage(LocaleController.getString(R.string.AnonymousDataDeleteDesc));
-            builder.setPositiveButton(LocaleController.getString(R.string.Delete), (dialog, which) -> {
-                AnalyticsHelper.setAnalyticsDisabled();
-                listView.adapter.update(true);
             });
-            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-            AlertDialog dialog = builder.create();
-            showDialog(dialog);
-            dialog.redPositive();
         } else if (id == contentRestrictionRow) {
             NekoConfig.toggleIgnoreContentRestriction();
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(NekoConfig.ignoreContentRestriction);
             }
-        } else if (id == copyReportIdRow) {
-            if (AnalyticsHelper.analyticsDisabled || !AnalyticsHelper.sendBugReport) {
-                return;
-            }
-            SettingsHelper.copyReportId();
         } else if (id == autoInlineBotRow) {
             NekoConfig.toggleAutoInlineBot();
             if (view instanceof TextCheckCell) {
@@ -267,6 +222,11 @@ public class NekoExperimentalSettingsActivity extends BaseNekoSettingsActivity {
                 });
                 item.subtext = LocaleController.getString(R.string.CheckingUpdate);
                 listView.adapter.notifyItemChanged(position);
+            }
+        } else if (id == localCustomEmojiRow) {
+            NekoConfig.toggleLocalCustomEmoji();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.localCustomEmoji);
             }
         }
     }

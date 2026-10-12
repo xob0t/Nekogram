@@ -83,6 +83,8 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import tw.nekomimi.nekogram.helpers.MessageHelper;
+
 public class EmojiPacksAlert extends BottomSheet implements NotificationCenter.NotificationCenterDelegate {
 
     private LongSparseArray<AnimatedEmojiDrawable> animatedEmojiDrawables;
@@ -123,7 +125,7 @@ public class EmojiPacksAlert extends BottomSheet implements NotificationCenter.N
 
         @Override
         public boolean needSend(int contentType) {
-            return fragment instanceof ChatActivity && ((ChatActivity) fragment).canSendMessage() && (UserConfig.getInstance(UserConfig.selectedAccount).isPremium() || ((ChatActivity) fragment).getCurrentUser() != null && UserObject.isUserSelf(((ChatActivity) fragment).getCurrentUser()));
+            return fragment instanceof ChatActivity && ((ChatActivity) fragment).canSendMessage() && (UserConfig.getInstance(UserConfig.selectedAccount).isPremium() || MessageHelper.canUseLocalCustomEmojis(UserConfig.selectedAccount) || ((ChatActivity) fragment).getCurrentUser() != null && UserObject.isUserSelf(((ChatActivity) fragment).getCurrentUser()));
         }
 
         @Override
@@ -137,7 +139,7 @@ public class EmojiPacksAlert extends BottomSheet implements NotificationCenter.N
 
         @Override
         public boolean needCopy(TLRPC.Document document) {
-            return UserConfig.getInstance(UserConfig.selectedAccount).isPremium() && MessageObject.isAnimatedEmoji(document);
+            return (UserConfig.getInstance(UserConfig.selectedAccount).isPremium() || MessageHelper.canUseLocalCustomEmojis(UserConfig.selectedAccount)) && MessageObject.isAnimatedEmoji(document);
         }
 
         @Override
@@ -982,7 +984,7 @@ public class EmojiPacksAlert extends BottomSheet implements NotificationCenter.N
         boolean openBgLight = AndroidUtilities.computePerceivedBrightness(getThemedColor(Theme.key_dialogBackground)) > .721f;
         boolean closedBgLight = AndroidUtilities.computePerceivedBrightness(Theme.blendOver(getThemedColor(Theme.key_actionBarDefault), 0x33000000)) > .721f;
         boolean isLight = open ? openBgLight : closedBgLight;
-        AndroidUtilities.setLightStatusBar(getWindow(), isLight);
+        AndroidUtilities.setLightStatusBar(this, isLight);
     }
 
     public void updateInstallment() {

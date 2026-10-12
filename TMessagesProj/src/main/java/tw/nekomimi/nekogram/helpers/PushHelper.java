@@ -10,7 +10,6 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 
-import tw.nekomimi.nekogram.helpers.remote.ConfigHelper;
 import tw.nekomimi.nekogram.helpers.remote.UpdateHelper;
 
 public class PushHelper {
@@ -27,12 +26,6 @@ public class PushHelper {
             switch (action) {
                 case "check_app_update":
                     checkAppUpdate();
-                    break;
-                case "load_remote_config":
-                    ConfigHelper.getInstance().load();
-                    break;
-                case "set_remote_config":
-                    ConfigHelper.getInstance().onLoadSuccess(message.data);
                     break;
             }
         } catch (Exception e) {

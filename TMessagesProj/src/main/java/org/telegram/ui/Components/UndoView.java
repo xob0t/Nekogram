@@ -272,21 +272,21 @@ public class UndoView extends FrameLayout {
 
         leftImageView = new RLottieImageView(context);
         leftImageView.setScaleType(ImageView.ScaleType.CENTER);
-        leftImageView.setLayerColor("info1.**", getThemedColor(Theme.key_undo_background) | 0xff000000);
-        leftImageView.setLayerColor("info2.**", getThemedColor(Theme.key_undo_background) | 0xff000000);
-        leftImageView.setLayerColor("luc12.**", getThemedColor(Theme.key_undo_infoColor));
-        leftImageView.setLayerColor("luc11.**", getThemedColor(Theme.key_undo_infoColor));
-        leftImageView.setLayerColor("luc10.**", getThemedColor(Theme.key_undo_infoColor));
-        leftImageView.setLayerColor("luc9.**", getThemedColor(Theme.key_undo_infoColor));
-        leftImageView.setLayerColor("luc8.**", getThemedColor(Theme.key_undo_infoColor));
-        leftImageView.setLayerColor("luc7.**", getThemedColor(Theme.key_undo_infoColor));
-        leftImageView.setLayerColor("luc6.**", getThemedColor(Theme.key_undo_infoColor));
-        leftImageView.setLayerColor("luc5.**", getThemedColor(Theme.key_undo_infoColor));
-        leftImageView.setLayerColor("luc4.**", getThemedColor(Theme.key_undo_infoColor));
-        leftImageView.setLayerColor("luc3.**", getThemedColor(Theme.key_undo_infoColor));
-        leftImageView.setLayerColor("luc2.**", getThemedColor(Theme.key_undo_infoColor));
-        leftImageView.setLayerColor("luc1.**", getThemedColor(Theme.key_undo_infoColor));
-        leftImageView.setLayerColor("Oval.**", getThemedColor(Theme.key_undo_infoColor));
+        leftImageView.setLayerColor("info1", getThemedColor(Theme.key_undo_background) | 0xff000000);
+        leftImageView.setLayerColor("info2", getThemedColor(Theme.key_undo_background) | 0xff000000);
+        leftImageView.setLayerColor("luc12", getThemedColor(Theme.key_undo_infoColor));
+        leftImageView.setLayerColor("luc11", getThemedColor(Theme.key_undo_infoColor));
+        leftImageView.setLayerColor("luc10", getThemedColor(Theme.key_undo_infoColor));
+        leftImageView.setLayerColor("luc9", getThemedColor(Theme.key_undo_infoColor));
+        leftImageView.setLayerColor("luc8", getThemedColor(Theme.key_undo_infoColor));
+        leftImageView.setLayerColor("luc7", getThemedColor(Theme.key_undo_infoColor));
+        leftImageView.setLayerColor("luc6", getThemedColor(Theme.key_undo_infoColor));
+        leftImageView.setLayerColor("luc5", getThemedColor(Theme.key_undo_infoColor));
+        leftImageView.setLayerColor("luc4", getThemedColor(Theme.key_undo_infoColor));
+        leftImageView.setLayerColor("luc3", getThemedColor(Theme.key_undo_infoColor));
+        leftImageView.setLayerColor("luc2", getThemedColor(Theme.key_undo_infoColor));
+        leftImageView.setLayerColor("luc1", getThemedColor(Theme.key_undo_infoColor));
+        leftImageView.setLayerColor("Oval", getThemedColor(Theme.key_undo_infoColor));
         addView(leftImageView, LayoutHelper.createFrame(54, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_VERTICAL | Gravity.LEFT, 3, 0, 0, 0));
 
         avatarImageView = new BackupImageView(context);
@@ -341,8 +341,8 @@ public class UndoView extends FrameLayout {
         Theme.setDrawableColor(backgroundDrawable, background);
         infoTextView.setTextColor(text);
         subinfoTextView.setTextColor(text);
-        leftImageView.setLayerColor("info1.**", background | 0xff000000);
-        leftImageView.setLayerColor("info2.**", background | 0xff000000);
+        leftImageView.setLayerColor("info1", background | 0xff000000);
+        leftImageView.setLayerColor("info2", background | 0xff000000);
     }
 
     private boolean isTooltipAction() {
@@ -467,6 +467,30 @@ public class UndoView extends FrameLayout {
     }
 
     public void showWithAction(ArrayList<Long> dialogIds, int action, Object infoObject, Object infoObject2, Runnable actionRunnable, Runnable cancelRunnable) {
+        if (parentFragment != null) {
+            var factory = BulletinFactory.of(parentFragment);
+            if (action == ACTION_MESSAGE_COPIED || action == ACTION_USERNAME_COPIED || action == ACTION_HASHTAG_COPIED || action == ACTION_TEXT_COPIED || action == ACTION_LINK_COPIED || action == ACTION_PHONE_COPIED || action == ACTION_EMAIL_COPIED) {
+                if (action == ACTION_LINK_COPIED) {
+                    factory.createCopyLinkBulletin().show();
+                } else if (action == ACTION_EMAIL_COPIED) {
+                    factory.createCopyBulletin(LocaleController.getString(R.string.EmailCopied)).show();
+                } else if (action == ACTION_PHONE_COPIED) {
+                    factory.createCopyBulletin(LocaleController.getString(R.string.PhoneCopied)).show();
+                } else if (action == ACTION_USERNAME_COPIED) {
+                    factory.createCopyBulletin(LocaleController.getString(R.string.UsernameCopied)).show();
+                } else if (action == ACTION_HASHTAG_COPIED) {
+                    factory.createCopyBulletin(LocaleController.getString(R.string.HashtagCopied)).show();
+                } else if (action == ACTION_MESSAGE_COPIED) {
+                    factory.createCopyBulletin(LocaleController.getString(R.string.MessageCopied)).show();
+                } else {
+                    factory.createCopyBulletin(LocaleController.getString(R.string.TextCopied)).show();
+                }
+                return;
+            } else if (action == ACTION_TEXT_INFO) {
+                factory.createErrorBulletin((CharSequence) infoObject).show();
+                return;
+            }
+        }
         if (!AndroidUtilities.shouldShowClipboardToast() && (currentAction == ACTION_MESSAGE_COPIED || currentAction == ACTION_USERNAME_COPIED || currentAction == ACTION_HASHTAG_COPIED || currentAction == ACTION_TEXT_COPIED || currentAction == ACTION_LINK_COPIED || currentAction == ACTION_PHONE_COPIED || currentAction == ACTION_EMAIL_COPIED || currentAction == ACTION_VOIP_LINK_COPIED)) {
             return;
         }
@@ -1158,10 +1182,10 @@ public class UndoView extends FrameLayout {
                 infoTextView.setTypeface(AndroidUtilities.bold());
                 infoTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
                 leftImageView.clearLayerColors();
-                leftImageView.setLayerColor("BODY.**", getThemedColor(Theme.key_undo_infoColor));
-                leftImageView.setLayerColor("Wibe Big.**", getThemedColor(Theme.key_undo_infoColor));
-                leftImageView.setLayerColor("Wibe Big 3.**", getThemedColor(Theme.key_undo_infoColor));
-                leftImageView.setLayerColor("Wibe Small.**", getThemedColor(Theme.key_undo_infoColor));
+                leftImageView.setLayerColor("BODY", getThemedColor(Theme.key_undo_infoColor));
+                leftImageView.setLayerColor("Wibe Big", getThemedColor(Theme.key_undo_infoColor));
+                leftImageView.setLayerColor("Wibe Big 3", getThemedColor(Theme.key_undo_infoColor));
+                leftImageView.setLayerColor("Wibe Small", getThemedColor(Theme.key_undo_infoColor));
 
                 infoTextView.setText(LocaleController.getString(R.string.ProximityAlertSet));
                 leftImageView.setAnimation(R.raw.ic_unmute, 28, 28);
@@ -1181,11 +1205,11 @@ public class UndoView extends FrameLayout {
                 infoTextView.setTypeface(Typeface.DEFAULT);
                 infoTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
                 leftImageView.clearLayerColors();
-                leftImageView.setLayerColor("Body Main.**", getThemedColor(Theme.key_undo_infoColor));
-                leftImageView.setLayerColor("Body Top.**", getThemedColor(Theme.key_undo_infoColor));
-                leftImageView.setLayerColor("Line.**", getThemedColor(Theme.key_undo_infoColor));
-                leftImageView.setLayerColor("Curve Big.**", getThemedColor(Theme.key_undo_infoColor));
-                leftImageView.setLayerColor("Curve Small.**", getThemedColor(Theme.key_undo_infoColor));
+                leftImageView.setLayerColor("Body Main", getThemedColor(Theme.key_undo_infoColor));
+                leftImageView.setLayerColor("Body Top", getThemedColor(Theme.key_undo_infoColor));
+                leftImageView.setLayerColor("Line", getThemedColor(Theme.key_undo_infoColor));
+                leftImageView.setLayerColor("Curve Big", getThemedColor(Theme.key_undo_infoColor));
+                leftImageView.setLayerColor("Curve Small", getThemedColor(Theme.key_undo_infoColor));
 
                 layoutParams.topMargin = AndroidUtilities.dp(14);
 

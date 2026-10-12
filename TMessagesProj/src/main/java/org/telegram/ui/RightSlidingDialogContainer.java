@@ -62,7 +62,7 @@ public abstract class RightSlidingDialogContainer extends FrameLayout {
         if (fragment.onFragmentCreate()) {
             fragment.setInPreviewMode(true);
             fragment.setParentLayout(navigationLayout);
-            View view = fragment.createView(getContext());
+            View view = fragment.performCreateView(getContext());
 
             fragment.onResume();
             addView(currentFragmentView = view);
@@ -389,7 +389,7 @@ public abstract class RightSlidingDialogContainer extends FrameLayout {
                     float x = swipeBackX;
                     float velX = velocityTracker.getXVelocity();
                     float velY = velocityTracker.getYVelocity();
-                    final boolean backAnimation = x < getMeasuredWidth() / 3.0f && (velX < 2800 || velX < velY);
+                    final boolean backAnimation = x < getMeasuredWidth() / 3.0f && (velX < 3500 || velX < velY);
 
                     if (!backAnimation) {
                         finishPreviewInernal();
