@@ -40,7 +40,7 @@ This repository is a fork of a fork:
 
 #### CI
 
-`.github/workflows/release.yml` builds signed APKs on every push to `main` and uploads them as two artifacts, `Release-arm64-v8a` and `Release-universal`, then posts them to Telegram. It needs these repository secrets:
+`.github/workflows/release.yml` builds signed APKs on every push to `main` and on manual dispatch, and uploads them as two workflow artifacts, `Release-arm64-v8a` and `Release-universal`. The upstream Telegram upload job is removed. It needs these repository secrets:
 
 | Secret | Contents |
 | --- | --- |
@@ -48,9 +48,6 @@ This repository is a fork of a fork:
 | `RELEASE_KEYSTORE_B64` | base64 of the release keystore, written to `TMessagesProj/config/release.keystore` |
 | `LOCAL_PROPERTIES` | lines appended to `local.properties` (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`) |
 | `APP_ID`, `APP_HASH` | Telegram API credentials, patched into `Extra.java` |
-| `HELPER_BOT_TOKEN`, `HELPER_BOT_TARGET`, `HELPER_BOT_CANARY_TARGET` | bot and chats used by `Tools/scripts/upload.py` |
-
-Add `[skip upload]` to the commit message to build without posting to Telegram.
 
 ## API, Protocol documentation
 
